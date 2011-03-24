@@ -7,6 +7,7 @@ $string['addcomment'] = 'Add comment';
 $string['addentries'] = 'Add entries';
 $string['addtemplate'] = 'Add template';
 $string['advancedsearch'] = 'Advanced search';
+$string['alignedlist'] = 'Aligned list';
 $string['allowcomments'] = 'Allow comments?';
 $string['allowratings'] = 'Allow posts to be rated?';
 $string['alttext'] = 'Alternative text';

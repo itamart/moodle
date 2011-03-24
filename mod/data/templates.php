@@ -102,36 +102,66 @@
     print_heading(format_string($data->name));
 
 
-/// Groups needed for Add entry tab
+    // Groups needed for Add entry tab
     $currentgroup = groups_get_activity_group($cm);
     $groupmode = groups_get_activity_groupmode($cm);
 
-/// Print the tabs.
+    // Print the tabs.
     $currenttab = 'templates';
     include('tabs.php');
 
-/// Processing submitted data, i.e updating form.
+    // Processing submitted data, i.e updating form.
     $resettemplate = false;
 
-/// html editor is by default disabled
+    // Aligned list (for list template) is by default disabled
+    $alignedlist = isset($SESSION->data_align_list) ? $SESSION->data_align_list : 0;
+
+    // html editor is by default disabled
     $editor = isset($SESSION->data_use_editor) ? $SESSION->data_use_editor : (can_use_html_editor() ? 1 : 0);
 
-    if (($mytemplate = data_submitted($CFG->wwwroot.'/mod/data/templates.php')) && confirm_sesskey()) {
-        $newtemplate->id = $data->id;
-        $newtemplate->{$mode} = $mytemplate->template;
+    // html editor is disabled in aligned list template mode
+    $editor =  ($mode == 'listtemplate' and $alignedlist) ? 0 : $editor;
 
+    if (($mytemplate = data_submitted($CFG->wwwroot.'/mod/data/templates.php')) && confirm_sesskey()) {
+        // Aligned list option for list template
+        if ($mode == 'listtemplate') {
+            $alignedlist = !empty($mytemplate->alignedlist) ? 1 : 0;
+            $SESSION->data_align_list = $alignedlist;
+        }
+
+        // Switch editor
         if (!empty($mytemplate->switcheditor)) {
             $editor = $editor ? 0 : 1;
+            if ($mode == 'listtemplate' and $alignedlist) {
+                $editor = 0; // Aligned list works only in html mode so turn off editor
+            }
             $SESSION->data_use_editor = $editor;
+        // Reset the template to default, but don't save yet.
         } else if (!empty($mytemplate->defaultform)) {
-            // Reset the template to default, but don't save yet.
             $resettemplate = true;
-            $data->{$mode} = data_generate_default_template($data, $mode, 0, false, false);
-            if ($mode == 'listtemplate') {
+            if ($mode == 'listtemplate' and $alignedlist) {
+                // Aligned list works only in html mode so turn off editor
+                if ($editor) {
+                    $editor = 0;
+                    $SESSION->data_use_editor = $editor;
+                }
+                // generate default template for aligned list
+                $alignedlisttemplate = data_generate_default_template($data, 'alignedlisttemplate', 0, false, false);
+                $data->listtemplateheader = $alignedlisttemplate['listtemplateheader'];
+                $data->listtemplate = $alignedlisttemplate['listtemplate'];
+                $data->listtemplatefooter = $alignedlisttemplate['listtemplatefooter'];
+            } else{
+                $data->{$mode} = data_generate_default_template($data, $mode, 0, false, false);
+            }
+            if ($mode == 'listtemplate' and !$alignedlist) {
                 $data->listtemplateheader = '';
                 $data->listtemplatefooter = '';
             }
+        // Save changes
         } else {
+            $newtemplate->id = $data->id;
+            $newtemplate->{$mode} = $mytemplate->template;
+
             if (isset($mytemplate->listtemplateheader)){
                 $newtemplate->listtemplateheader = $mytemplate->listtemplateheader;
             }
@@ -154,7 +184,7 @@
         echo '<div class="littleintro" style="text-align:center">'.get_string('header'.$mode,'data').'</div>';
     }
 
-/// If everything is empty then generate some defaults
+    // If everything is empty then generate some defaults
     if (empty($data->addtemplate) and empty($data->singletemplate) and
         empty($data->listtemplate) and empty($data->rsstemplate)) {
         data_generate_default_template($data, 'singletemplate');
@@ -177,8 +207,9 @@
     print_simple_box_start('center','80%');
     echo '<table cellpadding="4" cellspacing="0" border="0">';
 
-/// Add the HTML editor(s).
+    // Add the HTML editor(s).
     $usehtmleditor = $editor && can_use_html_editor() && ($mode != 'csstemplate') && ($mode != 'jstemplate');
+    // Print the list template header.
     if ($mode == 'listtemplate'){
         // Print the list template header.
         echo '<tr>';
@@ -191,14 +222,47 @@
     }
 
     // Print the main template.
-
     echo '<tr><td valign="top">';
     if ($mode != 'csstemplate' and $mode != 'jstemplate') {
-        // Add all the available fields for this data.
+
+        echo '<br />';
+        // Print setting buttons
+        echo '<fieldset id="templatesettings" class="clearfix">';
+        echo '<legend class="ftoggler">Settings</legend>';
+
+        // Aligned list option
+        if ($mode == 'listtemplate') {
+            if ($alignedlist) {
+                $checked = ' checked="checked" ';
+            } else {
+                $checked = '';
+            }
+            echo '<input type="checkbox" id="alignedlistcheckbox" name="alignedlist" '.
+                $checked. ' /><label for="alignedlistcheckbox">&nbsp;'.
+                get_string('alignedlist','data'). '</label>';
+            echo '<br /><br />';
+        }
+
+        if (can_use_html_editor()) {
+            if ($editor) {
+                $switcheditor = get_string('editordisable', 'data');
+            } else {
+                $switcheditor = get_string('editorenable', 'data');
+            }
+            echo '<input type="submit" name="switcheditor" value="'.s($switcheditor).'" />';
+            echo '<br /><br />';
+        }
+
+        echo '<input type="submit" name="defaultform" value="'.
+            get_string('resettemplate','data').'" />';
+
+        echo '</fieldset>';
+        echo '<br /><br />';
+
+        // Print all the available fields for this data.
         echo '<label for="availabletags">'.get_string('availabletags','data').'</label>';
         helpbutton('tags', get_string('tags'), 'data');
         echo '<br />';
-
 
         echo '<select name="fields1[]" id="availabletags" size="12" onclick="insert_field_tags(this)">';
 
@@ -251,18 +315,13 @@
         }
 
         echo '</select>';
-        echo '<br /><br /><br /><br /><input type="submit" name="defaultform" value="'.get_string('resettemplate','data').'" />';
-        if (can_use_html_editor()) {
-            echo '<br /><br />';
-            if ($editor) {
-                $switcheditor = get_string('editordisable', 'data');
-            } else {
-                $switcheditor = get_string('editorenable', 'data');
-            }
-            echo '<input type="submit" name="switcheditor" value="'.s($switcheditor).'" />';
-        }
     } else {
-        echo '<br /><br /><br /><br /><input type="submit" name="defaultform" value="'.get_string('resettemplate','data').'" />';
+        echo '<br />';
+        // Print setting buttons
+        echo '<fieldset id="templatesettings" class="clearfix">';
+        echo '<legend class="ftoggler">Settings</legend>';
+        echo '<input type="submit" name="defaultform" value="'.get_string('resettemplate','data').'" />';
+        echo '</fieldset>';
     }
     echo '</td>';
 
@@ -300,7 +359,6 @@
 
     echo '</td></tr></table>';
 
-
     print_simple_box_end();
     echo '</div>';
     echo '</form>';
@@ -314,6 +372,6 @@
         }
     }
 
-/// Finish the page
+    // Finish the page
     print_footer($course);
 ?>

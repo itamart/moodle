@@ -334,7 +334,7 @@ class data_field_base {     // Base class for Database Field Types (see field/*/
 
 /*
 /* Given a template and a dataid, generate a default case template
- * input @param template - addtemplate, singletemplate, listtempalte, rsstemplate
+ * input @param template - addtemplate, singletemplate, listtempalte, rsstemplate, alignedlisttemplate
  *       @param dataid
  * output null
  */
@@ -350,12 +350,17 @@ function data_generate_default_template(&$data, $template, $recordid=0, $form=fa
     // get all the fields for that database
     if ($fields = get_records('data_fields', 'dataid', $data->id, 'id')) {
 
-        $str = '<div class="defaulttemplate">';
-        $str .= '<table cellpadding="5">';
+		if ($template == 'alignedlisttemplate') {
+			$strheader = '<div class="defaulttemplate"><table class="alignedlisttemplate"><tr>';
+			$str = '<tr>';
+			$strfooter = '</table><div>';
+		} else {
+			$str = '<div class="defaulttemplate"><table cellpadding="5">';
+		}
 
         foreach ($fields as $field) {
 
-            $str .= '<tr><td valign="top" align="right">';
+            //$str .= '<tr><td valign="top" align="right">';
             // Yu: commenting this out, the id was wrong and will fix later
             //if ($template == 'addtemplate') {
                 //$str .= '<label';
@@ -365,11 +370,17 @@ function data_generate_default_template(&$data, $template, $recordid=0, $form=fa
                 //$str .= '>'.$field->name.'</label>';
                 
             //} else {
-                $str .= $field->name.': ';
+                //$str .= $field->name.': ';
             //}
-            $str .= '</td>';
+            //$str .= '</td>';
+			if ($template == 'alignedlisttemplate') {
+				$strheader .= '<th>'. $field->name. '</th>';
+			} else {
+				$str .= '<tr><td valign="top">'. $field->name.': </td>';			
+			}
 
-            $str .='<td>';
+            $str .='<td valign="top">';
+
             if ($form) {   // Print forms instead of data
                 $fieldobj = data_get_field($field, $data);
                 $str .= $fieldobj->display_add_field($recordid);
@@ -377,37 +388,63 @@ function data_generate_default_template(&$data, $template, $recordid=0, $form=fa
             } else {           // Just print the tag
                 $str .= '[['.$field->name.']]';
             }
-            $str .= '</td></tr>';
+            $str .= '</td>';
 
+		    if ($template != 'alignedlisttemplate') {
+                $str .= '</tr>';
+            }
         }
-        if ($template == 'listtemplate') {
-            $str .= '<tr><td align="center" colspan="2">##edit##  ##more##  ##delete##  ##approve##</td></tr>';
+
+        if ($template == 'alignedlisttemplate') {
+            $strheader .= '<th></th></tr>';
+            $str .= '<td align="center">##edit##  ##more##  ##delete##  ##approve##</td></tr>';
+        } else if ($template == 'listtemplate') {
+            $str .= '<tr><td align="center" colspan="2">'.
+                    '##edit##  ##more##  ##delete##  ##approve##</td></tr>';
+            $str .= '</table></div><hr />';
         } else if ($template == 'singletemplate') {
-            $str .= '<tr><td align="center" colspan="2">##edit##  ##delete##  ##approve##</td></tr>';
+            $str .= '<tr><td align="center" colspan="2">'.
+                    '##edit##  ##delete##  ##approve##</td></tr>';
+            $str .= '</table></div>';
         } else if ($template == 'asearchtemplate') {
-            $str .= '<tr><td valign="top" align="right">'.get_string('authorfirstname', 'data').': </td><td>##firstname##</td></tr>';
-            $str .= '<tr><td valign="top" align="right">'.get_string('authorlastname', 'data').': </td><td>##lastname##</td></tr>';
-        }
-
-        $str .= '</table>';
-        $str .= '</div>';
-
-        if ($template == 'listtemplate'){
-            $str .= '<hr />';
+            $str .= '<tr><td valign="top" align="right">'.get_string('authorfirstname', 'data').
+                    ': </td><td>##firstname##</td></tr>';
+            $str .= '<tr><td valign="top" align="right">'.get_string('authorlastname', 'data').
+                    ': </td><td>##lastname##</td></tr>';
+            $str .= '</table></div>';
         }
 
         if ($update) {
             $newdata = new object();
             $newdata->id = $data->id;
-            $newdata->{$template} = addslashes($str);
+            if ($template == 'alignedlisttemplate') {
+                $newdata->{'listtemplateheader'} = addslashes($strheader);
+                $newdata->{'listtemplate'} = addslashes($str);
+                $newdata->{'listtemplatefooter'} = addslashes($strfooter);
+            } else {
+                $newdata->{$template} = addslashes($str);
+            }
             if (!update_record('data', $newdata)) {
                 notify('Error updating template');
             } else {
-                $data->{$template} = $str;
+                if ($template == 'alignedlisttemplate') {
+                    $data->{'listtemplateheader'} = $strheader;
+                    $data->{'listtemplate'} = $str;
+                    $data->{'listtemplatefooter'} = $strfooter;
+                } else {
+                    $data->{$template} = $str;
+                }
             }
         }
 
-        return $str;
+        if ($template == 'alignedlisttemplate') {
+            return array(
+                'listtemplateheader' => $strheader,
+                'listtemplate' => $str,
+                'listtemplatefooter' => $strfooter);
+        } else {
+            return $str;
+        }
     }
 }
 
