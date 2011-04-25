@@ -1,0 +1,139 @@
+<?php  // $Id$
+///////////////////////////////////////////////////////////////////////////
+//                                                                       //
+// NOTICE OF COPYRIGHT                                                   //
+//                                                                       //
+// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
+//          http://moodle.org                                            //
+//                                                                       //
+// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
+//                                                                       //
+// This program is free software; you can redistribute it and/or modify  //
+// it under the terms of the GNU General Public License as published by  //
+// the Free Software Foundation; either version 2 of the License, or     //
+// (at your option) any later version.                                   //
+//                                                                       //
+// This program is distributed in the hope that it will be useful,       //
+// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
+// GNU General Public License for more details:                          //
+//                                                                       //
+//          http://www.gnu.org/copyleft/gpl.html                         //
+//                                                                       //
+///////////////////////////////////////////////////////////////////////////
+
+class dataform_field_url extends dataform_field_base {
+    public $type = 'url';
+
+    function dataform_field_text($field = 0, $df = 0) {
+        parent::dataform_field_base($field, $df);
+    }
+
+    function display_edit($recordid = 0) {
+        global $CFG;
+        $url = '';
+        $text = '';
+        if ($recordid) {
+            if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+                $url  = $content->content;
+                $text = $content->content1;
+            }
+        }
+        $url = empty($url) ? 'http://' : $url;
+        $str = '<div title="'.s($this->field->description).'">';
+        if (!empty($this->field->param1) and empty($this->field->param2)) {
+            $str .= '<table><tr><td align="right">';
+            $str .= get_string('url','dataform').':</td>'.
+                    '<td><input type="text" name="field_'. $this->field->id. '_0'. '_'. $recordid. '" id="field_'. $this->field->id. '_0'. '_'. $recordid. '" value="'.$url.'" size="60" /></td></tr>';
+            $str .= '<tr><td align="right">'. get_string('text','dataform'). ':</td>'.
+                    '<td><input type="text" name="field_'. $this->field->id. '_1'. '_'. $recordid. '" id="field_'. $this->field->id. '_1'. '_'. $recordid. '" value="'.s($text).'" size="60" /></td></tr>';
+            $str .= '</table>';
+        } else {
+            // Just the URL field
+            $str .= '<input type="text" name="field_'.$this->field->id.'_0'. '_'. $recordid. '" id="field_'. $this->field->id. '_0'. '_'. $recordid. '" value="'.s($url).'" size="60" />';
+        }
+        $str .= '</div>';
+        return $str;
+    }
+
+    function display_search($value = '') {
+        return '<input type="text" size="16" name="f_'.$this->field->id.'" value="'.$value.'" />';
+    }
+
+    function parse_search() {
+        return optional_param('f_'.$this->field->id, '', PARAM_NOTAGS);
+    }
+
+    function get_search_sql($value) {
+        return " (c{$this->field->id}.fieldid = {$this->field->id} AND c{$this->field->id}.content LIKE '%{$value}%') ";
+    }
+
+    function display_browse($recordid) {
+        if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+            $url = empty($content->content)? '':$content->content;
+            $text = empty($content->content1)? '':$content->content1;
+            if (empty($url) or ($url == 'http://')) {
+                return '';
+            }
+            if (!empty($this->field->param2)) {
+                // param2 forces the text to something
+                $text = $this->field->param2;
+            }
+            if ($this->field->param1) {
+                // param1 defines whether we want to autolink the url.
+                if (!empty($text)) {
+                    $str = '<a href="'.$url.'">'.$text.'</a>';
+                } else {
+                    $str = '<a href="'.$url.'">'.$url.'</a>';
+                }
+            } else {
+                $str = $url;
+            }
+            return $str;
+        }
+        return false;
+    }
+
+    function update_content($recordid, $value, $name='') {
+        $content = new object;
+        $content->fieldid = $this->field->id;
+        $content->recordid = $recordid;
+        $names = explode('_', $name);
+        switch ($names[2]) {
+            case 0:
+                // update link
+                $content->content = clean_param($value, PARAM_URL);
+                break;
+            case 1:
+                // add text
+                $content->content1 = clean_param($value, PARAM_NOTAGS);
+                break;
+            default:
+                break;
+        }
+
+        if ($oldcontent = get_record('dataform_content','fieldid', $this->field->id, 'recordid', $recordid)) {
+            $content->id = $oldcontent->id;
+            return update_record('dataform_content', $content);
+        } else {
+            return insert_record('dataform_content', $content);
+        }
+    }
+
+    function notemptyfield($value, $name) {
+        $names = explode('_',$name);
+        $value = clean_param($value, PARAM_URL);
+        //clean first
+        if ($names[2] == '0') {
+            return ($value!='http://' && !empty($value));
+        }
+        return false;
+    }
+
+    function export_text_value($record) {
+        return $record->content . " " . $record->content1;
+    }
+
+}
+
+?>

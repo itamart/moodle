@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/dataform/db" VERSION="20110411" COMMENT="XMLDB file for Moodle mod/dataform"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="dataform" COMMENT="all dataform activities" NEXT="dataform_fields">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="course"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="course" NEXT="intro"/>
+        <FIELD NAME="intro" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="name" NEXT="timeavailable"/>
+        <FIELD NAME="timeavailable" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="intro" NEXT="timedue"/>
+        <FIELD NAME="timedue" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timeavailable" NEXT="timeinterval"/>
+        <FIELD NAME="timeinterval" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timedue" NEXT="intervalcount"/>
+        <FIELD NAME="intervalcount" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="timeinterval" NEXT="allowlate"/>
+        <FIELD NAME="allowlate" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="intervalcount" NEXT="requiredentries"/>
+        <FIELD NAME="requiredentries" TYPE="int" LENGTH="8" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="allowlate" NEXT="requiredentriestoview"/>
+        <FIELD NAME="requiredentriestoview" TYPE="int" LENGTH="8" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="requiredentries" NEXT="maxentries"/>
+        <FIELD NAME="maxentries" TYPE="int" LENGTH="8" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="requiredentriestoview" NEXT="timelimit"/>
+        <FIELD NAME="timelimit" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="maxentries" NEXT="approval"/>
+        <FIELD NAME="approval" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timelimit" NEXT="comments"/>
+        <FIELD NAME="comments" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="approval" NEXT="rssarticles"/>
+        <FIELD NAME="rssarticles" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="comments" NEXT="scale"/>
+        <FIELD NAME="scale" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="rssarticles" NEXT="assessed"/>
+        <FIELD NAME="assessed" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="scale" NEXT="rsstemplate"/>
+        <FIELD NAME="rsstemplate" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="assessed" NEXT="css"/>
+        <FIELD NAME="css" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="rsstemplate" NEXT="js"/>
+        <FIELD NAME="js" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="css" NEXT="defaultview"/>
+        <FIELD NAME="defaultview" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="js" NEXT="defaultsort"/>
+        <FIELD NAME="defaultsort" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="defaultview" NEXT="editany"/>
+        <FIELD NAME="editany" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="defaultsort" NEXT="notification"/>
+        <FIELD NAME="notification" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" COMMENT="Notify people when things change" PREVIOUS="editany"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="course" UNIQUE="false" FIELDS="course"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="dataform_fields" COMMENT="every field available" PREVIOUS="dataform" NEXT="dataform_views">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="dataid"/>
+        <FIELD NAME="dataid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="type"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="dataid" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="type" NEXT="description"/>
+        <FIELD NAME="description" TYPE="text" LENGTH="small" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="name" NEXT="param1"/>
+        <FIELD NAME="param1" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="description" NEXT="param2"/>
+        <FIELD NAME="param2" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param1" NEXT="param3"/>
+        <FIELD NAME="param3" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param2" NEXT="param4"/>
+        <FIELD NAME="param4" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param3" NEXT="param5"/>
+        <FIELD NAME="param5" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param4" NEXT="param6"/>
+        <FIELD NAME="param6" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param5" NEXT="param7"/>
+        <FIELD NAME="param7" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param6" NEXT="param8"/>
+        <FIELD NAME="param8" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param7" NEXT="param9"/>
+        <FIELD NAME="param9" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param8" NEXT="param10"/>
+        <FIELD NAME="param10" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param9"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="dataid"/>
+        <KEY NAME="dataid" TYPE="foreign" FIELDS="dataid" REFTABLE="dataform" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="type-dataid" UNIQUE="false" FIELDS="type, dataid" COMMENT="used by dataform linking filter"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="dataform_views" COMMENT="every view available" PREVIOUS="dataform_fields" NEXT="dataform_filters">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="dataid"/>
+        <FIELD NAME="dataid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="type"/>
+        <FIELD NAME="type" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="dataid" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="type" NEXT="description"/>
+        <FIELD NAME="description" TYPE="text" LENGTH="small" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="name" NEXT="visible"/>
+        <FIELD NAME="visible" TYPE="int" LENGTH="1" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="description" NEXT="section"/>
+        <FIELD NAME="section" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="visible" NEXT="sectionpos"/>
+        <FIELD NAME="sectionpos" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="section" NEXT="param1"/>
+        <FIELD NAME="param1" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="sectionpos" NEXT="param2"/>
+        <FIELD NAME="param2" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param1" NEXT="param3"/>
+        <FIELD NAME="param3" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param2" NEXT="param4"/>
+        <FIELD NAME="param4" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param3" NEXT="param5"/>
+        <FIELD NAME="param5" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param4" NEXT="param6"/>
+        <FIELD NAME="param6" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param5" NEXT="param7"/>
+        <FIELD NAME="param7" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param6" NEXT="param8"/>
+        <FIELD NAME="param8" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param7" NEXT="param9"/>
+        <FIELD NAME="param9" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param8" NEXT="param10"/>
+        <FIELD NAME="param10" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="param9"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="dataid"/>
+        <KEY NAME="dataid" TYPE="foreign" FIELDS="dataid" REFTABLE="dataform" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="type-dataid" UNIQUE="false" FIELDS="type, dataid" COMMENT="used by dataform linking filter"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="dataform_filters" COMMENT="every filter available" PREVIOUS="dataform_views" NEXT="dataform_records">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="dataid"/>
+        <FIELD NAME="dataid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="name"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="dataid" NEXT="description"/>
+        <FIELD NAME="description" TYPE="text" LENGTH="small" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="name" NEXT="visible"/>
+        <FIELD NAME="visible" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="1" SEQUENCE="false" ENUM="false" PREVIOUS="description" NEXT="perpage"/>
+        <FIELD NAME="perpage" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="10" SEQUENCE="false" ENUM="false" PREVIOUS="visible" NEXT="groupby"/>
+        <FIELD NAME="groupby" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="false" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="perpage" NEXT="search"/>
+        <FIELD NAME="search" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="groupby" NEXT="customsort"/>
+        <FIELD NAME="customsort" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="search" NEXT="customsearch"/>
+        <FIELD NAME="customsearch" TYPE="text" LENGTH="small" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="customsort"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="dataid"/>
+        <KEY NAME="dataid" TYPE="foreign" FIELDS="dataid" REFTABLE="dataform" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="dataform_records" COMMENT="every record introduced" PREVIOUS="dataform_filters" NEXT="dataform_content">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="groupid"/>
+        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="userid" NEXT="dataid"/>
+        <FIELD NAME="dataid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="groupid" NEXT="timecreated"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="dataid" NEXT="timemodified"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timecreated" NEXT="rating"/>
+        <FIELD NAME="rating" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="timemodified" NEXT="comments"/>
+        <FIELD NAME="comments" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="rating" NEXT="approved"/>
+        <FIELD NAME="approved" TYPE="int" LENGTH="4" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="comments"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="dataid"/>
+        <KEY NAME="dataid" TYPE="foreign" FIELDS="dataid" REFTABLE="dataform" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="dataform_content" COMMENT="the content introduced in each record/fields" PREVIOUS="dataform_records" NEXT="dataform_comments">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="fieldid"/>
+        <FIELD NAME="fieldid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="recordid"/>
+        <FIELD NAME="recordid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="fieldid" NEXT="content"/>
+        <FIELD NAME="content" TYPE="text" LENGTH="big" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="recordid" NEXT="content1"/>
+        <FIELD NAME="content1" TYPE="text" LENGTH="big" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="content" NEXT="content2"/>
+        <FIELD NAME="content2" TYPE="text" LENGTH="big" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="content1" NEXT="content3"/>
+        <FIELD NAME="content3" TYPE="text" LENGTH="big" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="content2" NEXT="content4"/>
+        <FIELD NAME="content4" TYPE="text" LENGTH="big" NOTNULL="false" SEQUENCE="false" ENUM="false" PREVIOUS="content3"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="recordid"/>
+        <KEY NAME="recordid" TYPE="foreign" FIELDS="recordid" REFTABLE="dataform_records" REFFIELDS="id" PREVIOUS="primary" NEXT="fieldid"/>
+        <KEY NAME="fieldid" TYPE="foreign" FIELDS="fieldid" REFTABLE="dataform_fields" REFFIELDS="id" PREVIOUS="recordid"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="dataform_comments" COMMENT="to comment dataform records" PREVIOUS="dataform_content" NEXT="dataform_ratings">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="recordid"/>
+        <FIELD NAME="recordid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="userid" NEXT="content"/>
+        <FIELD NAME="content" TYPE="text" LENGTH="small" NOTNULL="true" SEQUENCE="false" ENUM="false" PREVIOUS="recordid" NEXT="format"/>
+        <FIELD NAME="format" TYPE="int" LENGTH="2" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="content" NEXT="created"/>
+        <FIELD NAME="created" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="format" NEXT="modified"/>
+        <FIELD NAME="modified" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="created"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="recordid"/>
+        <KEY NAME="recordid" TYPE="foreign" FIELDS="recordid" REFTABLE="dataform_records" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="dataform_ratings" COMMENT="to rate dataform records" PREVIOUS="dataform_comments">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true" ENUM="false" NEXT="userid"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="id" NEXT="recordid"/>
+        <FIELD NAME="recordid" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="userid" NEXT="rating"/>
+        <FIELD NAME="rating" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" DEFAULT="0" SEQUENCE="false" ENUM="false" PREVIOUS="recordid"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="recordid"/>
+        <KEY NAME="recordid" TYPE="foreign" FIELDS="recordid" REFTABLE="dataform_records" REFFIELDS="id" PREVIOUS="primary"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+  <STATEMENTS>
+    <STATEMENT NAME="insert log_display" TYPE="insert" TABLE="log_display" COMMENT="Initial insert of records on table log_display">
+      <SENTENCES>
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'view', 'dataform', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'add', 'dataform', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'update', 'dataform', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'record delete', 'dataform', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'fields add', 'dataform_fields', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'fields update', 'dataform_fields', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'views add', 'dataform_views', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'views update', 'dataform_views', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'filters add', 'dataform_filters', 'name')" />
+        <SENTENCE TEXT="(module, action, mtable, field) VALUES ('dataform', 'filters update', 'dataform_filters', 'name')" />
+      </SENTENCES>
+    </STATEMENT>
+  </STATEMENTS>
+</XMLDB>
