@@ -1,172 +1,42 @@
 <?php // $Id
-//This php script contains all the stuff to backup/restore data mod
+//This php script contains all the stuff to restore dataform mod
+//-----------------------------------------------------------
 
-    //This is the "graphical" structure of the data mod:
-    //
-    //                     data
-    //                    (CL,pk->id)
-    //                        |
-    //                        |
-    //                        |
-    //      ---------------------------------------------------------------------------------
-    //      |                                                                               |
-    //data_records (UL,pk->id, fk->data)                                      data_fields (pk->id, fk->data)
-    //               |                                                                      |
-    //               |                                                                      |
-    //     -----------------------------------------------------------------------------    |
-    //     |                                  |                                        |    |
-    //data_ratings(fk->recordid, pk->id) data_comments (fk->recordid, pk->id)          |    |
-    //                                                                  data_content(pk->id, fk->recordid, fk->fieldid)
-    //
-    //
-    //
-    // Meaning: pk->primary key field of the table
-    //          fk->foreign key to link with parent
-    //          nt->nested field (recursive data)
-    //          CL->course level info
-    //          UL->user level info
-    //          files->table may have files)
-    //
-    //-----------------------------------------------------------
+//Backup data files because we've selected to backup user info
+//and files are user info's level
 
-    //Backup data files because we've selected to backup user info
-    //and files are user info's level
-
-$fieldids = array();    //array in the format of $fieldids[$oldid]=$newid. This is needed because of double dependencies of multiple tables.
-
-
-    //Return a content encoded to support interactivities linking. Every module
-function data_restore_mods($mod,$restore) {
+//Return a content encoded to support interactivities linking. Every module
+function dataform_restore_mods($mod, $restore) {
 
     global $CFG;
-
     $status = true;
+    
+    echo "restore dataform\n";
 
-    $data = backup_getid($restore->backup_unique_code,$mod->modtype,$mod->id);
+    $backup = backup_getid($restore->backup_unique_code, $mod->modtype, $mod->id);
 
-    if ($data) {
+    if ($backup) {
         //Now get completed xmlized object
-        $info = $data->info;
+        $info = $backup->info;
+        
+        // TODO
         // if necessary, write to restorelog and adjust date/time fields
         if ($restore->course_startdateoffset) {
-            restore_log_date_changes('Database', $restore, $info['MOD']['#'], array('TIMEAVAILABLEFROM', 'TIMEAVAILABLETO','TIMEVIEWFROM', 'TIMEVIEWTO'));
+            restore_log_date_changes('Dataform', $restore, $info['MOD']['#']['PRESET']['0']['#']['SETTINGS']['0']['#'], array('TIMEAVAILABLE', 'TIMEDUE'));
         }
-        //traverse_xmlize($info);                                                                     //Debug
-        //print_object ($GLOBALS['traverse_array']);                                                  //Debug
-        //$GLOBALS['traverse_array']="";                                                              //Debug
-
-        $database->course = $restore->course_id;
-
-        $database->name = backup_todb($info['MOD']['#']['NAME']['0']['#']);
-        $database->intro = backup_todb($info['MOD']['#']['INTRO']['0']['#']);
-        // Only relevant for restoring backups from 1.6 in a 1.7 install.
-        if (isset($info['MOD']['#']['RATINGS']['0']['#'])) {
-            $database->ratings = backup_todb($info['MOD']['#']['RATINGS']['0']['#']);
-        }
-        $database->comments = backup_todb($info['MOD']['#']['COMMENTS']['0']['#']);
-        $database->timeavailablefrom = backup_todb($info['MOD']['#']['TIMEAVAILABLEFROM']['0']['#']);
-        $database->timeavailableto = backup_todb($info['MOD']['#']['TIMEAVAILABLETO']['0']['#']);
-        $database->timeviewfrom = backup_todb($info['MOD']['#']['TIMEVIEWFROM']['0']['#']);
-        $database->timeviewto = backup_todb($info['MOD']['#']['TIMEVIEWTO']['0']['#']);
-        // Only relevant for restoring backups from 1.6 in a 1.7 install.
-        if (isset($info['MOD']['#']['PARTICIPANTS']['0']['#'])) {
-            $database->participants = backup_todb($info['MOD']['#']['PARTICIPANTS']['0']['#']);
-        }
-        $database->requiredentries = backup_todb($info['MOD']['#']['REQUIREDENTRIES']['0']['#']);
-        $database->requiredentriestoview = backup_todb($info['MOD']['#']['REQUIREDENTRIESTOVIEW']['0']['#']);
-        $database->maxentries = backup_todb($info['MOD']['#']['MAXENTRIES']['0']['#']);
-        $database->rssarticles = backup_todb($info['MOD']['#']['RSSARTICLES']['0']['#']);
-        $database->singletemplate = backup_todb($info['MOD']['#']['SINGLETEMPLATE']['0']['#']);
-        $database->listtemplate = backup_todb($info['MOD']['#']['LISTTEMPLATE']['0']['#']);
-        $database->listtemplateheader = backup_todb($info['MOD']['#']['LISTTEMPLATEHEADER']['0']['#']);
-        $database->listtemplatefooter = backup_todb($info['MOD']['#']['LISTTEMPLATEFOOTER']['0']['#']);
-        $database->addtemplate = backup_todb($info['MOD']['#']['ADDTEMPLATE']['0']['#']);
-        $database->rsstemplate = backup_todb($info['MOD']['#']['RSSTEMPLATE']['0']['#']);
-        $database->rsstitletemplate = backup_todb($info['MOD']['#']['RSSTITLETEMPLATE']['0']['#']);
-        $database->csstemplate = backup_todb($info['MOD']['#']['CSSTEMPLATE']['0']['#']);
-        $database->jstemplate = backup_todb($info['MOD']['#']['JSTEMPLATE']['0']['#']);
-        $database->asearchtemplate = backup_todb($info['MOD']['#']['ASEARCHTEMPLATE']['0']['#']);
-        $database->approval = backup_todb($info['MOD']['#']['APPROVAL']['0']['#']);
-        $database->scale = backup_todb($info['MOD']['#']['SCALE']['0']['#']);
-        $database->assessed = backup_todb($info['MOD']['#']['ASSESSED']['0']['#']);
-        // Only relevant for restoring backups from 1.6 in a 1.7 install.
-        if (isset($info['MOD']['#']['ASSESSPUBLIC']['0']['#'])) {
-            $database->assesspublic = backup_todb($info['MOD']['#']['ASSESSPUBLIC']['0']['#']);
-        }
-        $database->defaultsort = backup_todb($info['MOD']['#']['DEFAULTSORT']['0']['#']);
-        $database->defaultsortdir = backup_todb($info['MOD']['#']['DEFAULTSORTDIR']['0']['#']);
-        $database->editany = backup_todb($info['MOD']['#']['EDITANY']['0']['#']);
-        $database->notification = backup_todb($info['MOD']['#']['NOTIFICATION']['0']['#']);
         
-        //fix related to MDL-24470: if someone restore a backup previous to this fix it would fail
-        //if notification = NULL as the column can not be NULL anymore
-        if (empty($database->notification)) {
-            $database->notification = 0;
-        }
-
-        // We have to recode the scale field if it's <0 (positive is a grade, not a scale)
-        if ($database->scale < 0) {
-            $scale = backup_getid($restore->backup_unique_code, 'scale', abs($database->scale));
-            if ($scale) {
-                $database->scale = -($scale->new_id);
-            }
-        }
-
-        $newid = insert_record ('dataform', $database);
-
-        //Do some output
-        if (!defined('RESTORE_SILENTLY')) {
-            echo "<li>".get_string("modulename","data")." \"".format_string(stripslashes($database->name),true)."\"</li>";
-        }
-
-        if ($newid) {
-            //We have the newid, update backup_ids
-            backup_putid($restore->backup_unique_code,$mod->modtype,
-                             $mod->id, $newid);
-            //Now check if want to restore user data and do it.
-            if (function_exists('restore_userdata_selected')) {
-                // Moodle 1.6
-                $restore_userdata_selected = restore_userdata_selected($restore, 'dataform', $mod->id);
-            } else {
-                // Moodle 1.5
-                $restore_userdata_selected = $restore->mods['dataform']->userinfo;
-            }
-
-            global $fieldids;
-            //Restore data_fields first!!! need to hold an array of [oldid]=>newid due to double dependencies
-            $status = $status and data_fields_restore_mods ($mod->id, $newid, $info, $restore);
-
-            // now use the new field in the defaultsort
-            $newdefaultsort = empty($fieldids[$database->defaultsort]) ? 0 : $fieldids[$database->defaultsort];
-            set_field('dataform', 'defaultsort', $newdefaultsort, 'id', $newid);
-
-            if ($restore_userdata_selected) {
-                $status = $status and data_records_restore_mods ($mod->id, $newid, $info, $restore);
-            }
-
-            // If the backup contained $data->participants, $data->assesspublic
-            // and $data->groupmode, we need to convert the data to use Roles.
-            // It means the backup was made pre Moodle 1.7. We check the
-            // backup_version to make sure.
-            if (isset($database->participants) && isset($database->assesspublic)) {
-
-                if (!$teacherroles = get_roles_with_capability('moodle/legacy:teacher', CAP_ALLOW)) {
-                      notice('Default teacher role was not found. Roles and permissions '.
-                             'for your database modules will have to be manually set.');
-                }
-                if (!$studentroles = get_roles_with_capability('moodle/legacy:student', CAP_ALLOW)) {
-                      notice('Default student role was not found. Roles and permissions '.
-                             'for all your database modules will have to be manually set.');
-                }
-                if (!$guestroles = get_roles_with_capability('moodle/legacy:guest', CAP_ALLOW)) {
-                      notice('Default guest role was not found. Roles and permissions '.
-                             'for all your database modules will have to be manually set.');
-                }
-                require_once($CFG->dirroot.'/mod/dataform/lib.php');
-                data_convert_to_roles($database, $teacherroles, $studentroles,
-                                      $restore->mods['dataform']->instances[$mod->id]->restored_as_course_module);
-            }
-
+        $params = new object();
+        $params->mode = 'courserestore';
+        $params->courseid = $restore->course_id;
+        $params->backup_unique_code = $restore->backup_unique_code;
+               
+        // restore preset
+        $modinfo = $info['MOD']['#'];       
+        restore_dataform_preset($modinfo, $params);
+        
+        // restore user data if requested
+        if ($params->dataformid and restore_userdata_selected($restore, 'dataform', $mod->id)) {
+            restore_dataform_userdata($modinfo, $params);
         } else {
             $status = false;
         }
@@ -177,293 +47,472 @@ function data_restore_mods($mod,$restore) {
     return $status;
 }
 
-function data_fields_restore_mods ($old_data_id, $new_data_id, $info, $restore) {
+/**
+ *
+ */
+function restore_dataform_preset($modinfo, &$params) {
+    if ($modinfo['PRESET'] and $preset = $modinfo['PRESET']['#']) {
 
-    global $CFG, $fieldids;
-
-
-    $fields = $info['MOD']['#']['FIELDS']['0']['#']['FIELD'];
-
-    for ($i = 0; $i < sizeof($fields); $i++) {
-
-        $fie_info = $fields[$i];
-        $oldid = backup_todb($fie_info['#']['ID']['0']['#']);
-
-        $field -> dataid = $new_data_id;
-        $field -> type = backup_todb($fie_info['#']['TYPE']['0']['#']);
-        $field -> name = backup_todb($fie_info['#']['NAME']['0']['#']);
-        $field -> description = backup_todb($fie_info['#']['DESCRIPTION']['0']['#']);
-        $field -> param1 = backup_todb($fie_info['#']['PARAM1']['0']['#']);
-        $field -> param2 = backup_todb($fie_info['#']['PARAM2']['0']['#']);
-        $field -> param3 = backup_todb($fie_info['#']['PARAM3']['0']['#']);
-        $field -> param4 = backup_todb($fie_info['#']['PARAM4']['0']['#']);
-        $field -> param5 = backup_todb($fie_info['#']['PARAM5']['0']['#']);
-        $field -> param6 = backup_todb($fie_info['#']['PARAM6']['0']['#']);
-        $field -> param7 = backup_todb($fie_info['#']['PARAM7']['0']['#']);
-        $field -> param8 = backup_todb($fie_info['#']['PARAM8']['0']['#']);
-        $field -> param9 = backup_todb($fie_info['#']['PARAM9']['0']['#']);
-        $field -> param10 = backup_todb($fie_info['#']['PARAM10']['0']['#']);
-
-        $newid = insert_record ("data_fields",$field);
-
-        $fieldids[$oldid] = $newid;    //so we can use them in sub tables that depends on both fieldid and recordid
-
-        //Do some output
-        if (($i+1) % 50 == 0) {
-            if (!defined('RESTORE_SILENTLY')) {
-                echo ".";
-                if (($i+1) % 1000 == 0) {
-                    echo "<br />";
+        $mode = ($params and isset($params->mode) ? $params->mode : '');
+        // $objids[$oldid]=$newid arrays for recording and adjusting interdependencies between object
+        $params->fieldids = array();
+        $params->viewids = array();
+        $params->filterids = array();
+    
+        // collect settings
+        if ($settings = $preset['SETTINGS']['0']['#']) {
+            $dataform = new object();
+            foreach ($settings as $key => $setting) {
+                if ($key != 'ENTRY') {  // we process the enry params below
+                    $dataform->{strtolower($key)} = backup_todb($setting['0']['#']);
                 }
             }
-            backup_flush(300);
-        }
+        
+            if ($mode ==  'courserestore') {
+                // adjust settings
+                $dataform->course = $params->courseid;
 
-        if ($newid) {
-            //We have the newid, update backup_ids
-            $status = backup_putid($restore->backup_unique_code,"data_fields",$oldid, $newid);
-        } else {
-            $status = false;
-        }
+                // We have to recode the scale field if it's <0 (positive is a grade, not a scale)
+                if ($dataform->scale < 0) {
+                    $scale = backup_getid($params->backup_unique_code, 'scale', abs($dataform->scale));
+                    if ($scale) {
+                        $dataform->scale = -($scale->new_id);
+                    }
+                }
+                    
+                $params->sourcedataformid = $dataform->id;
+                // create the new dataform
+                $params->destdataformid = insert_record('dataform', $dataform);
 
-    }
-    return $status;
+                // show progress
+                if (!defined('RESTORE_SILENTLY')) {
+                    echo "<li>".get_string("modulename","dataform")." \"".format_string(stripslashes($dataform->name),true)."\"</li>";
+                }
 
-}
+                if ($params->destdataformid) {
+                    // update backup_ids
+                    backup_putid($params->backup_unique_code,$mod->modtype,$mod->id, $params->destdataformid);
+                }
 
-function data_records_restore_mods ($old_data_id, $new_data_id, $info, $restore) {
-
-    global $CFG, $fieldids;
-
-    $status = true;
-
-    $records = isset($info['MOD']['#']['RECORDS']['0']['#']['RECORD']) ? $info['MOD']['#']['RECORDS']['0']['#']['RECORD'] : array();
-
-    if (empty($records)) { // no records to restore
-        return true;
-    }
-
-    for ($i = 0; $i < sizeof($records); $i++) {
-
-        $rec_info = $records[$i];
-        $oldid = backup_todb($rec_info['#']['ID']['0']['#']);
-
-        $record = new object();
-        $record -> dataid = $new_data_id;
-        $record -> userid = backup_todb($rec_info['#']['USERID']['0']['#']);
-        $record -> groupid = backup_todb($rec_info['#']['GROUPID']['0']['#']);
-        $record -> timecreated = backup_todb($rec_info['#']['TIMECREATED']['0']['#']);
-        $record -> timemodified = backup_todb($rec_info['#']['TIMEMODIFIED']['0']['#']);
-        $record -> approved = backup_todb($rec_info['#']['APPROVED']['0']['#']);
-        $user = backup_getid($restore->backup_unique_code,"user",$record->userid);
-        $group= restore_group_getid($restore, $record->groupid);
-
-        if ($user) {
-            $record->userid = $user->new_id;
-        }
-        if ($group) {
-            $record->groupid= $group->new_id;
-        }
-
-        $newid = insert_record ("data_records",$record);
-
-        //Do some output
-        if (($i+1) % 50 == 0) {
-            if (!defined('RESTORE_SILENTLY')) {
-                echo ".";
-                if (($i+1) % 1000 == 0) {
-                    echo "<br />";
+            // activity restore
+            } else {
+                if (isset($params->destdataformid)) {
+                    $dataform->id = $params->destdataformid;
+                    update_record('dataform', $dataform);
+                } else {    // shouldn't happen
+                    // set $params->destdataformid to 0 so as to abort the restore
+                    $params->destdataformid = 0;
                 }
             }
-            backup_flush(300);
+            
+            // dataform entry params
         }
 
-        if ($newid) {
-            //We have the newid, update backup_ids
-            $status = $status and backup_putid($restore->backup_unique_code,"data_records",$oldid, $newid);
+        if ($params->destdataformid) {
+            
+            // restore fields
+            if ($preset['FIELDS']['0']['#']) {
+                $fields = $preset['FIELDS']['0']['#']['FIELD'];
+                foreach ($fields as $i => $arr) {
+                
+                    // collect field info
+                    $field_info = $arr['#'];
+                    foreach ($field_info as $key => $value) {
+                        $field->{strtolower($key)} = backup_todb($value['0']['#']);
+                    }
+                    
+                    // adjust field dataid
+                    $field->dataid = $params->destdataformid;
+                    
+                    // insert field to database
+                    $fieldoldid = $field->id;
+                    if ($fieldnewid = insert_record("dataform_fields", $field)) {
 
-            $status = $status and data_content_restore_mods ($oldid, $newid, $old_data_id, $new_data_id, $rec_info, $restore);
-            $status = $status and data_ratings_restore_mods ($oldid, $newid, $info, $rec_info);
-            $status = $status and data_comments_restore_mods ($oldid, $newid, $info, $rec_info);
+                        // register old => new field id 
+                        $params->fieldids[$fieldoldid] = $fieldnewid;
+                        
+                        if ($mode == 'courserestore') {
+                            show_progress($i);
+                            // update backup_ids
+                            $status = backup_putid($params->backup_unique_code, "dataform_fields", $fieldoldid, $fieldnewid);
+                        }
+                        
+                    } else {
+                        // TODO: should we break?
+                        $status = false;
+                    }
+                }                
+            }
 
-        } else {
-            $status = false;
+            // restore filters (before views because views require filter ids)
+            if ($preset['FILTERS']['0']['#']) {
+                $filters = $preset['FILTERS']['0']['#']['FILTER'];                
+                foreach ($filters as $i => $arr) {
+
+                    // collect fitler info                    
+                    $filter_info = $arr['#'];
+                    foreach ($filter_info as $key => $value) {
+                        $filter->{strtolower($key)} = backup_todb($value['0']['#']);
+                    }
+                        
+                    // adjust filter dataid
+                    $filter->dataid = $params->destdataformid;
+
+                    // adjust groupby field id
+                    if ($filter->groupby > 0) {   // groupby user field
+                        $filter->groupby = $params->fieldids[$view->groupby];
+                    }
+                        
+                    // adjust customsort field ids
+                    if ($filter->customsort) {
+                        $customsort = unserialize($filter->customsort);
+                        $updatedcustomsort = array();
+                        foreach ($customsort as $sortfield => $sortdir) {
+                            if ($sortfield > 0) {
+                                $updatedcustomsort[$params->fieldids[$sortfield]] = $sortdir;
+                            } else {
+                                $updatedcustomsort[$sortfield] = $sortdir;
+                            }
+                        }
+                        $filter->customsort = serialize($updatedcustomsort);
+                    }
+                        
+                    // adjust customsearch field ids
+                    if ($filter->customsearch) {
+                        $searchfields = unserialize($filter->customsearch);
+                        $updatedsearchoptions = array();
+                        foreach ($searchfields as $searchfield => $options) {
+                            if ($searchfield > 0) {
+                                $updatedsearchfields[$params->fieldids[$searchfield]] = $options;
+                            } else {
+                                $updatedsearchfields[$searchfield] = $options;
+                            }
+                        }
+                        $filter->customsearch = serialize($updatedsearchfields);
+                    }
+
+                    // insert filter to database
+                    $filteroldid = $filter->id;
+                    if ($filternewid = insert_record("dataform_filters", $filter)) {
+
+                        // old id -> new id
+                        $filterids[$filteroldid] = $filternewid;
+                        
+                        if ($mode == 'courserestore') {
+                            show_progress($i);
+                            // update backup_ids
+                            $status = backup_putid($params->backup_unique_code, "dataform_filters", $filteroldid, $filternewid);
+                        }
+                        
+                    } else {
+                        // TODO: should we break?
+                        $status = false;
+                    }
+                }               
+            }
+
+            // restore views
+            if ($preset['VIEWS']['0']['#']) {
+                $views = $preset['VIEWS']['0']['#']['VIEW'];                
+                foreach ($views as $i => $arr) {
+
+                    // collect view info
+                    $view_info = $arr['#'];
+                    foreach ($view_info as $key => $value) {
+                        $view->{strtolower($key)} = backup_todb($value['0']['#']);
+                    }
+                        
+                    // adjust view dataid
+                    $view->dataid = $params->destdataformid;
+
+                    // adjust view groupby field id
+                    if ($view->groupby > 0) {   // groupby user field
+                        $view->groupby = $params->fieldids[$view->groupby];
+                    }
+                    // adjust view filter id
+                    if ($view->filter) {
+                        $view->filter = $filterids[$view->filter];
+                    }
+
+                    // insert view to database
+                    $viewoldid = $view->id;
+                    if ($viewnewid = insert_record("dataform_views", $view)) {
+
+                        // old id -> new id
+                        $viewids[$viewoldid] = $viewnewid;
+
+                        if ($mode == 'courserestore') {
+                            show_progress($i);
+                            // update backup_ids
+                            $status = backup_putid($params->backup_unique_code, "dataform_views", $viewoldid, $viewnewid);
+                        }
+                        
+                    } else {
+                        // TODO: should we break?
+                        $status = false;
+                    }
+                }                
+            }
+
+            // adjust dataform referenced settings
+            if ($dataform->defaultview or $dataform->defaultsort
+                    or $dataform->singleedit or $dataform->singleview) {
+                $updatedf = new object();
+                $updatedf->id = $params->destdataformid;
+                
+                // default view
+                if ($dataform->defaultview) {
+                    $updatedf->defaultview = $viewids[$dataform->defaultview];
+                }
+                
+                // default sort
+                if ($dataform->defaultsort) {
+                    $defaultsort = unserialize($dataform->defaultsort);
+                    $updateddefaultsort = array();
+                    foreach ($defaultsort as $sortfield => $sortdir) {
+                        if ($sortfield > 0) {
+                            $updateddefaultsort[$params->fieldids[$sortfield]] = $sortdir;
+                        } else {
+                            $updateddefaultsort[$sortfield] = $sortdir;
+                        }
+                    }
+                    $updatedf->defaultsort = serialize($updateddefaultsort);
+                }
+
+                // single edit view
+                if ($dataform->singleedit) {
+                    $updatedf->singleedit = $viewids[$dataform->singleedit];
+                }
+
+                // single view view
+                if ($dataform->singleview) {
+                    $updatedf->singleview = $viewids[$dataform->singleview];
+                }
+                
+                update_record('dataform', $updatedf);
+            }
         }
     }
-    return $status;
 }
 
-function data_content_restore_mods ($old_record_id, $new_record_id, $old_data_id, $new_data_id, $recinfo, $restore) {
+function restore_dataform_userdata($modinfo, &$params) {
+    if ($info['USERDATA'] and $userdata = $info['USERDATA']['0']['#']) {
 
-    global $CFG, $fieldids;
+        $mode = ($params and isset($params->mode) ? $params->mode : '');
+        $dataformid = ($params and isset($params->dataformid) ? $params->dataformid : 0);
+        $params->entrieids = array();
+    
+        // restore entries
+        if ($userdata['ENTRIES']['0']['#']) {
+            $entries = $userdata['ENTRIES']['0']['#']['ENTRIE'];
+            foreach ($entries as $i => $arr) {
+            
+                // collect entrie info
+                $entrie_info = $arr['#'];
+                foreach ($entrie_info as $key => $value) {
+                    $entrie->{strtolower($key)} = backup_todb($value['0']['#']);
+                }
+                
+                // adjust entrie dataid
+                $entrie->dataid = $dataformid;
+                
+                if ($mode = 'courserestore') {
+                    // adjust entrie user id
+                    if ($user = backup_getid($params->backup_unique_code,"user",$entrie->userid)) {
+                        $entrie->userid = $user->new_id;
+                    }
+                    // adjust entrie group id
+                    if ($group = restore_group_getid($restore, $entrie->groupid)) {
+                        $entrie->groupid= $group->new_id;
+                    }
+                }
 
-    $status = true;
+                // insert entrie to database
+                $entrieoldid = $entrie->id;
+                if ($entrienewid = insert_record("dataform_entries", $entrie)) {
 
-    $contents = $recinfo['#']['CONTENTS']['0']['#']['CONTENT'];
+                    // old id -> new id 
+                    $entrieids[$entrieoldid] = $entrienewid;
 
-    for ($i = 0; $i < sizeof($contents); $i++) {
+                    if ($mode = 'courserestore') {
+                        show_progress($i);
+                        // update backup_ids
+                        $status = backup_putid($params->backup_unique_code, "dataform_entries", $entrieoldid, $entrienewid);
+                    }
+                } else {
+                    // TODO: should we break?
+                    $status = false;
+                }
+            }                
+        }
 
-        $con_info = $contents[$i];
-        $oldid = backup_todb($con_info['#']['ID']['0']['#']);
-        $oldfieldid = backup_todb($con_info['#']['FIELDID']['0']['#']);
-        $oldrecordid = backup_todb($con_info['#']['RECORDID']['0']['#']);
+        // restore contents
+        if ($userdata['CONTENTS']['0']['#']) {
+            $contents = $userdata['CONTENTS']['0']['#']['CONTENT'];
+            foreach ($contents as $i => $arr) {
+            
+                // collect content info
+                $content_info = $arr['#'];
+                foreach ($content_info as $key => $value) {
+                    $content->{strtolower($key)} = backup_todb($value['0']['#']);
+                }
+                
+                // adjust content fieldid
+                $oldfieldid = $content->fieldid;
+                $content->fieldid = $params->fieldids[$oldfieldid];
+                
+                // adjust content recordid
+                $oldrecordid = $content->recordid;
+                $content->recordid = $entrieids[$oldrecordid];
+                
+                // insert content to database
+                $contentoldid = $content->id;
+                if ($contentnewid = insert_record("dataform_contents", $content)) {
 
-        $content -> recordid = $new_record_id;
-        $content -> fieldid = $fieldids[$oldfieldid];
-        $content -> content = backup_todb($con_info['#']['CONTENT']['0']['#']);
-        $content -> content1 = backup_todb($con_info['#']['CONTENT1']['0']['#']);
-        $content -> content2 = backup_todb($con_info['#']['CONTENT2']['0']['#']);
-        $content -> content3 = backup_todb($con_info['#']['CONTENT3']['0']['#']);
-        $content -> content4 = backup_todb($con_info['#']['CONTENT4']['0']['#']);
-        $newid = insert_record ("data_content",$content);
+                    // update backup_ids
+                    $status = $status and backup_putid($params->backup_unique_code, "dataform_contents", $contentoldid, $contentnewid);
 
-        //Do some output
-        if (($i+1) % 50 == 0) {
-            if (!defined('RESTORE_SILENTLY')) {
-                echo ".";
-                if (($i+1) % 1000 == 0) {
-                    echo "<br />";
+                    show_progress($i);
+
+                } else {
+                    // TODO: should we break?
+                    $status = false;
+                }
+            }                
+        }
+
+        // restore comments
+        if ($userdata['COMMENTS']['0']['#']) {
+            $comments = $userdata['COMMENTS']['0']['#']['COMMENT'];
+            foreach ($comments as $i => $arr) {
+            
+                // collect comment info
+                $comment_info = $arr['#'];
+                foreach ($comment_info as $key => $value) {
+                    $comment->{strtolower($key)} = backup_todb($value['0']['#']);
+                }
+                
+                // adjust comment user id
+                if ($mode = 'courserestore') {
+                    if ($user = backup_getid($params->backup_unique_code,"user",$comment->userid)) {
+                        $comment->userid = $user->new_id;
+                    }
+                }
+                
+                // adjust comment recordid
+                $comment->recordid = $entrieids[$comment->recordid];
+                
+                // insert comment to database
+                $commentoldid = $comment->id;
+                if ($commentnewid = insert_record("dataform_comments", $comment)) {
+
+                    if ($mode = 'courserestore') {
+                        show_progress($i);
+                        // update backup_ids
+                        $status = backup_putid($params->backup_unique_code, "dataform_comments", $commentoldid, $commentnewid);
+                    }
+                    
+                } else {
+                    // TODO: should we break?
+                    $status = false;
+                }
+            }                
+        }
+
+        // restore ratings
+        if ($userdata['RATINGS']['0']['#']) {
+            $ratings = $userdata['RATINGS']['0']['#']['RATING'];
+            foreach ($ratings as $i => $arr) {
+            
+                // collect rating info
+                $rating_info = $arr['#'];
+                foreach ($rating_info as $key => $value) {
+                    $rating->{strtolower($key)} = backup_todb($value['0']['#']);
+                }
+                
+                // adjust rating user id
+                if ($mode = 'courserestore') {
+                    if ($user = backup_getid($params->backup_unique_code,"user",$rating->userid)) {
+                        $rating->userid = $user->new_id;
+                    }
+                }
+                
+                // adjust rating recordid
+                $rating->recordid = $entrieids[$rating->recordid];
+                
+                // insert rating to database
+                $ratingoldid = $comment->id;
+                if ($ratingnewid = insert_record("dataform_ratings", $rating)) {
+
+                    if ($mode = 'courserestore') {
+                        show_progress($i);
+                        // update backup_ids
+                        $status = backup_putid($params->backup_unique_code, "dataform_ratings", $ratingoldid, $ratingnewid);
+                    }
+                    
+                } else {
+                    // TODO: should we break?
+                    $status = false;
+                }
+            }                
+        }
+
+        // TODO restore files               
+        // check if there are files for the backedup dataform
+        $temp_path = $CFG->dataroot."/temp/backup/".$params->backup_unique_code."/moddata/dataform/".$dataformoldid;
+        if (check_dir_exists($temp_path)) {
+            // check course directory in CFG->dataroot
+            $dest_dir = $CFG->dataroot. "/". $params->courseid;
+            $status = check_dir_exists($dest_dir, true);
+
+            // check course's moddata directory
+            if ($status) {
+                $moddata_path = $dest_dir. "/". $CFG->moddata;
+                $status = check_dir_exists($moddata_path, true);
+            }
+
+            // check dataform directory
+            if ($status) {
+                $dataform_path = $moddata_path."/dataform";
+                $status = check_dir_exists($dataform_path, true);
+            }
+
+            // check this dataform instance directory
+            if ($status) {
+                $this_dataform_path = $dataform_path."/".$params->destdataformid;
+                $status = check_dir_exists($this_dataform_path, true);
+            }
+
+            // get list of directories (names are old field ids)
+            if ($status) {
+                if ($fielddirs = list_directories($temp_path)) {
+                    foreach ($fielddirs as $fielddir) {
+                        // create a directory named new field id for the restored dataform
+                        $this_field_path = $this_dataform_path."/".$params->fieldids[$fielddir];
+                        $status = check_dir_exists($this_field_path, true);
+                        
+                        // get list of directories (names are old entrie ids)
+                        if ($status) {
+                            if ($entriedirs = list_directories($temp_path. "/". $fielddir)) {
+                                foreach ($entriedirs as $entriedir) {                                
+                                    // create a directory named new entrie id for the restored dataform
+                                    $this_entrie_path = $this_field_path."/".$entrieids[$entriedir];
+                                    $status = check_dir_exists($this_entrie_path, true);
+                                    
+                                    if ($status) {
+                                        $status = @backup_copy_file($temp_path. "/". $fielddir. "/". $entriedir, $this_entrie_path);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-            backup_flush(300);
-        }
-
-        if ($newid) {
-            //We have the newid, update backup_ids
-
-            $status = $status and data_restore_files ($old_data_id, $new_data_id, $oldfieldid, $content->fieldid, $oldrecordid, $content->recordid, $recinfo, $restore);
-            $status = $status and backup_putid($restore->backup_unique_code,"data_content",$oldid, $newid);
-        } else {
-            $status = false;
         }
     }
-    return $status;
 }
 
 
-function data_restore_files ($old_data_id, $new_data_id, $old_field_id, $new_field_id, $old_record_id, $new_record_id, $recinfo, $restore) {
-
-    global $CFG, $db;
-
-    $status = true;
-    $todo = false;
-    $moddata_path = "";
-    $data_path = "";
-    $temp_path = "";
-
-    //First, we check to "course_id" exists and create is as necessary
-    //in CFG->dataroot
-    $dest_dir = $CFG->dataroot."/".$restore->course_id;
-    $status = check_dir_exists($dest_dir,true);
-
-    //Now, locate course's moddata directory
-    $moddata_path = $CFG->dataroot."/".$restore->course_id."/".$CFG->moddata;
-
-    //Check it exists and create it
-    $status = check_dir_exists($moddata_path,true);
-
-    //Now, locate data directory
-    if ($status) {
-        $data_path = $moddata_path."/data";
-        //Check it exists and create it
-        $status = check_dir_exists($data_path,true);
-    }
-
-    //Now locate the temp dir we are gong to restore
-    if ($status) {
-        $temp_path = $CFG->dataroot."/temp/backup/".$restore->backup_unique_code.
-                    "/moddata/data/".$old_data_id."/".$old_field_id."/".$old_record_id;
-        $todo = check_dir_exists($temp_path);
-    }
-
-    //If todo, we create the neccesary dirs in course moddata/data
-    if ($status and $todo) {
-        //First this data id
-        $this_data_path = $data_path."/".$new_data_id;
-
-        $status = check_dir_exists($this_data_path,true);
-        //Now this user id
-        $this_field_path = $this_data_path."/".$new_field_id;
-        $status = check_dir_exists($this_field_path,true);
-        $this_record_path = $this_field_path = $this_field_path."/".$new_record_id;
-        $status = check_dir_exists($this_record_path,true);
-        //And now, copy temp_path to user_data_path
-
-        $status = @backup_copy_file($temp_path, $this_record_path);
-    }
-
-    return $status;
-}
-
-function data_ratings_restore_mods ($oldid, $newid, $info, $rec_info) {
-
-    global $CFG;
-
-    $status = true;
-
-    $ratings= isset($rec_info['#']['RATINGS']['0']['#']['RATING']) ? $rec_info['#']['RATINGS']['0']['#']['RATING'] : array();
-
-    if (empty($ratings)) { // no ratings to restore
-        return true;
-    }
-    for ($i = 0; $i < sizeof($ratings); $i++) {
-
-        $rat_info = $ratings[$i];
-
-        $rating->recordid = $newid;
-        $rating->userid = backup_todb($rat_info['#']['USERID']['0']['#']);
-        $rating->rating = backup_todb($rat_info['#']['RATING']['0']['#']);
-
-        // Need to remap the user
-        $user = backup_getid($restore->backup_unique_code,"user",$rating->userid);
-        if ($user) {
-            $rating->userid = $user->new_id;
-        }
-
-        if (! insert_record ("data_ratings",$rating)) {
-            $status = false;
-        }
-    }
-    return $status;
-}
-
-function data_comments_restore_mods ($oldid, $newid, $info, $rec_info) {
-
-    global $CFG;
-
-    $status = true;
-
-    $comments= isset($rec_info['#']['COMMENTS']['0']['#']['COMMENT']) ? $rec_info['#']['COMMENTS']['0']['#']['COMMENT'] : array();
-
-    if (empty($comments)) { // no comments to restore
-        return true;
-    }
-
-    for ($i = 0; $i < sizeof($comments); $i++) {
-
-        $com_info = $comments[$i];
-
-        $comment->recordid = $newid;
-        $comment->userid = backup_todb($com_info['#']['USERID']['0']['#']);
-        $comment->content = backup_todb($com_info['#']['CONTENT']['0']['#']);
-        $comment->format = backup_todb($com_info['#']['FORMAT']['0']['#']);
-        $comment->created = backup_todb($com_info['#']['CREATED']['0']['#']);
-        $comment->modified = backup_todb($com_info['#']['MODIFIED']['0']['#']);
-
-        // Need to remap the user
-        $user = backup_getid($restore->backup_unique_code,"user",$comment->userid);
-        if ($user) {
-            $comment->userid = $user->new_id;
-        }
-
-        if (! insert_record ("data_comments",$comment)) {
-            $status = false;
-        }
-
-    }
-    return $status;
-
-}
 
 /**
  * Returns a content decoded to support interactivities linking. Every module
@@ -475,7 +524,7 @@ function data_comments_restore_mods ($oldid, $newid, $info, $rec_info) {
  * @param object $restore the preferences used in restore
  * @return string the decoded string
  */
-function data_decode_content_links ($content,$restore) {
+function dataform_decode_content_links($content,$restore) {
 
     global $CFG;
 
@@ -542,7 +591,7 @@ function data_decode_content_links ($content,$restore) {
     /// Iterate over foundset[2]. They are the old_ids
         foreach($foundset[2] as $old_id) {
         /// We get the needed variables here (data id)
-            $rec = backup_getid($restore->backup_unique_code,"data",$old_id);
+            $rec = backup_getid($restore->backup_unique_code,"dataform",$old_id);
         /// Personalize the searchstring
             $searchstring='/\$@(DATAVIEWBYD)\*('.$old_id.')@\$/';
         /// If it is a link to this course, update the link to its new location
@@ -568,8 +617,8 @@ function data_decode_content_links ($content,$restore) {
         foreach($foundset[2] as $key => $old_id) {
             $old_id2 = $foundset[3][$key];
         /// We get the needed variables here (data id and record id)
-            $rec = backup_getid($restore->backup_unique_code,"data",$old_id);
-            $rec2 = backup_getid($restore->backup_unique_code,"data_records",$old_id2);
+            $rec = backup_getid($restore->backup_unique_code,"dataform",$old_id);
+            $rec2 = backup_getid($restore->backup_unique_code,'dataform_entries',$old_id2);
         /// Personalize the searchstring
             $searchstring='/\$@(DATAVIEWRECORD)\*('.$old_id.')\*('.$old_id2.')@\$/';
         /// If it is a link to this course, update the link to its new location
@@ -596,7 +645,7 @@ function data_decode_content_links ($content,$restore) {
  * @param object $restore the preferences used in restore
  * @return boolean status of the execution
  */
-function data_decode_content_links_caller($restore) {
+function dataform_decode_content_links_caller($restore) {
 
     global $CFG;
     $status = true;
@@ -604,7 +653,7 @@ function data_decode_content_links_caller($restore) {
 /// Process every DATA (intro, all HTML templates) in the course
 /// Supported fields for main table:
     $supportedfields = array('intro','singletemplate','listtemplate',
-        'listtemplateheader','addtemplate','rsstemplate','rsstitletemplate');
+        'listtemplateheader','addtemplate','rss','rsstitletemplate');
     if ($datas = get_records_sql ("SELECT d.id, ".implode(',',$supportedfields)."
                                   FROM {$CFG->prefix}data d
                                   WHERE d.course = $restore->course_id")) {
@@ -638,7 +687,7 @@ function data_decode_content_links_caller($restore) {
 
         /// Update record if any field changed
             if($changed) {
-                $status = update_record("data",$newdata);
+                $status = update_record("dataform",$newdata);
             }
 
         /// Do some output
@@ -657,12 +706,12 @@ function data_decode_content_links_caller($restore) {
 /// Process every COMMENT (content) in the course
     if ($comments = get_records_sql ("SELECT dc.id, dc.content
                                       FROM {$CFG->prefix}data d,
-                                           {$CFG->prefix}data_records dr,
-                                           {$CFG->prefix}data_comments dc
+                                           {$CFG->prefix}dataform_entries dr,
+                                           {$CFG->prefix}dataform_comments dc
                                       WHERE d.course = $restore->course_id
                                         AND dr.dataid = d.id
                                         AND dc.recordid = dr.id")) {
-    /// Iterate over each data_comments->content
+    /// Iterate over each dataform_comments->content
         $i = 0;   //Counter to send some output to the browser to avoid timeouts
         foreach ($comments as $comment) {
         /// Increment counter
@@ -672,7 +721,7 @@ function data_decode_content_links_caller($restore) {
             if ($result != $content) {
             /// Update record
                 $comment->content = addslashes($result);
-                $status = update_record("data_comments",$comment);
+                $status = update_record("dataform_comments",$comment);
                 if (debugging()) {
                     if (!defined('RESTORE_SILENTLY')) {
                         echo '<br /><hr />'.s($content).'<br />changed to<br />'.s($result).'<hr /><br />';
@@ -695,12 +744,12 @@ function data_decode_content_links_caller($restore) {
 /// Process every CONTENT (content, content1, content2, content3, content4) in the course
     if ($contents = get_records_sql ("SELECT dc.id, dc.content, dc.content1, dc.content2, dc.content3, dc.content4
                                       FROM {$CFG->prefix}data d,
-                                           {$CFG->prefix}data_records dr,
-                                           {$CFG->prefix}data_content dc
+                                           {$CFG->prefix}dataform_entries dr,
+                                           {$CFG->prefix}dataform_contents dc
                                       WHERE d.course = $restore->course_id
                                         AND dr.dataid = d.id
                                         AND dc.recordid = dr.id")) {
-    /// Iterate over each data_content->content, content1, content2, content3 and content4
+    /// Iterate over each dataform_contents->content, content1, content2, content3 and content4
         $i = 0;   //Counter to send some output to the browser to avoid timeouts
         foreach ($contents as $cnt) {
         /// Increment counter
@@ -740,7 +789,7 @@ function data_decode_content_links_caller($restore) {
                     $cnt->content4 = addslashes($result4);
                 }
             /// Update record with the changed fields
-                $status = update_record("data_content",$cnt);
+                $status = update_record("dataform_contents",$cnt);
                 if (debugging()) {
                     if (!defined('RESTORE_SILENTLY')) {
                         echo '<br /><hr />'.s($content).'<br />changed to<br />'.s($result).'<hr /><br />';
@@ -761,6 +810,21 @@ function data_decode_content_links_caller($restore) {
     }
 
     return $status;
+}
+
+/**
+ * 
+ */
+function show_progress($i) {
+    if (($i+1) % 50 == 0) {
+        if (!defined('RESTORE_SILENTLY')) {
+            echo ".";
+            if (($i+1) % 1000 == 0) {
+                echo "<br />";
+            }
+        }
+        backup_flush(300);
+    }
 }
 
 ?>

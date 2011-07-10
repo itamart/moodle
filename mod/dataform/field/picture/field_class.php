@@ -1,118 +1,43 @@
 <?php  // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
 
-require_once($CFG->dirroot.'/mod/dataform/field/file/field.class.php');
+require_once($CFG->dirroot.'/mod/dataform/field/file/field_class.php');
 // Base class is 'file'
 
 class dataform_field_picture extends dataform_field_file {
     public $type = 'picture';
-    var $previewwidth  = 50;
-    var $previewheight = 50;
+    protected $previewwidth  = 50;
+    protected $previewheight = 50;
 
+    /**
+     *
+     */
     function dataform_field_picture($field = 0, $df = 0) {
         parent::dataform_field_base($field, $df);
     }
 
-    function display_edit($recordid = 0) {
-        global $CFG;
-        $filepath = '';
-        $filename = '';
-        $description = '';
-        if ($recordid) {
-            if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
-                $filename = $content->content;
-                $description = $content->content1;
-            }
-            $path = $this->df->data->course.'/'.$CFG->moddata.'/dataform/'.$this->df->id().'/'.$this->field->id.'/'.$recordid;
-            require_once($CFG->libdir.'/filelib.php');
-            $filepath = get_file_url("$path/$filename");
+    /**
+     * 
+     */
+    public function patterns($record = 0, $edit = false, $enabled = false) {
+        $patterns = array('fields' => array());
+        $recordid = $record ? $record->id : 0;
+        
+        if ($edit) {
+            $stredit = $this->display_edit($recordid);
+            $patterns['fields']['[['. $this->field->name. ']]'] = $stredit;
+            $patterns['fields']['[['. $this->field->name. ':thumbnail]]'] = $stredit;
+        } else { 
+            $patterns['fields']['[['. $this->field->name. ']]'] = $this->display_browse($recordid);
+            $patterns['fields']['[['. $this->field->name. ':thumbnail]]'] = $this->display_browse($recordid, true);
         }
-        $str = '<div title="'.s($this->field->description).'">';
-        $str .= '<fieldset><legend><span class="accesshide">'.$this->field->name.'</span></legend>';
-        $str .= '<input type="hidden" name ="field_'.$this->field->id.'_file'. '_'. $recordid. '" id="field_'.$this->field->id.'_file'. '_'. $recordid. '"  value="fakevalue" />';
-        $str .= '<label for="field_'.$this->field->id. '_'. $recordid. '">'.get_string('picture','dataform'). '</label>&nbsp;'.
-                '<input type="file" name ="field_'.$this->field->id. '_'. $recordid. '" id="field_'.$this->field->id. '_'. $recordid. '" /><br />';
-        $str .= '<label for="field_'.$this->field->id.'_filename'. '_'. $recordid. '">'.get_string('alttext','dataform') .'</label>&nbsp;'.
-                '<input type="text" name="field_'. $this->field->id.'_filename'. '_'. $recordid. '" id="field_'.$this->field->id.'_filename'. '_'. $recordid. '" value="'.s($description).'" /><br />';
-        $str .= '<input type="hidden" name="MAX_FILE_SIZE" value="'.s($this->field->param3).'" />';
-        if ($filepath) {
-            $str .= '<img width="'.s($this->previewwidth).'" height="'.s($this->previewheight).'" src="'.$filepath.'" alt="" />';
-        }
-        $str .= '</fieldset>';
-        $str .= '</div>';
-        return $str;
+        
+        return $patterns;
     }
 
-    function display_search($value = '') {
-        return '<input type="text" size="16" name="f_'.$this->field->id.'" value="'.$value.'" />';
-    }
-
-    function parse_search() {
-        return optional_param('f_'.$this->field->id, '', PARAM_NOTAGS);
-    }
-
-    function get_search_sql($value) {
-        return " (c{$this->field->id}.fieldid = {$this->field->id} AND c{$this->field->id}.content LIKE '%{$value}%') ";
-    }
-
-    function display_browse($recordid) {
-        global $CFG;
-        if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)){
-            if (isset($content->content)) {
-                $contents[0] = $content->content;
-                $contents[1] = $content->content1;
-            }
-            if (empty($contents[0])) {
-                // Nothing to show
-                return '';
-            }
-            $alt = empty($contents[1])? '':$contents[1];
-            $title = empty($contents[1])? '':$contents[1];
-            $src = $contents[0];
-            $path = $this->df->data->course.'/'.$CFG->moddata.'/dataform/'.$this->df->id().'/'.$this->field->id.'/'.$recordid;
-
-            $thumbnaillocation = $CFG->dataroot .'/'. $path .'/thumb/'.$src;
-            require_once($CFG->libdir.'/filelib.php');
-            $source = get_file_url("$path/$src");
-            $thumbnailsource = file_exists($thumbnaillocation) ? get_file_url("$path/thumb/$src") : $source;
-
-            if ($template == 'listtemplate') {
-                $width = $this->field->param4 ? ' width="'.s($this->field->param4).'" ' : ' ';
-                $height = $this->field->param5 ? ' height="'.s($this->field->param5).'" ' : ' ';
-                $str = '<a href="view.php?d='.$this->field->dataid.'&amp;rid='.$recordid.'"><img '.
-                     $width.$height.' src="'.$thumbnailsource.'" alt="'.s($alt).'" title="'.s($title).'" style="border:0px" /></a>';
-            } else {
-                $width = $this->field->param1 ? ' width="'.s($this->field->param1).'" ':' ';
-                $height = $this->field->param2 ? ' height="'.s($this->field->param2).'" ':' ';
-                $str = '<a href="'.$source.'"><img '.$width.$height.' src="'.$source.'" alt="'.s($alt).'" title="'.s($title).'" style="border:0px" /></a>';
-            }
-            return $str;
-        }
-        return false;
-    }
-
-    function update_field() {
+    /**
+     *
+     */
+    public function update_field() {
         // Get the old field data so that we can check whether the thumbnail dimensions have changed
         $oldfield = get_record('dataform_fields', 'id', $this->field->id);
         if (!update_record('dataform_fields', $this->field)) {
@@ -123,7 +48,7 @@ class dataform_field_picture extends dataform_field_file {
         // Have the thumbnail dimensions changed?
         if ($oldfield && ($oldfield->param4 != $this->field->param4 || $oldfield->param5 != $this->field->param5)) {
             // Check through all existing records and update the thumbnail
-            if ($contents = get_records('dataform_content', 'fieldid', $this->field->id)) {
+            if ($contents = get_records('dataform_contents', 'fieldid', $this->field->id)) {
                 if (count($contents) > 20) {
                     notify(get_string('resizingimages', 'dataform'), 'notifysuccess');
                     echo "\n\n";
@@ -140,20 +65,27 @@ class dataform_field_picture extends dataform_field_file {
         return true;
     }
 
-    function update_content($recordid, $value, $name) {
+    /**
+     *
+     */
+    public function update_content($recordid, $value='', $name='') {
         parent::update_content($recordid, $value, $name);
-        $content = get_record('dataform_content','fieldid', $this->field->id, 'recordid', $recordid);
-        $this->update_thumbnail($content);
         // Regenerate the thumbnail
+        if ($content = get_record('dataform_contents','fieldid', $this->field->id, 'recordid', $recordid)) {
+            $this->update_thumbnail($content);
+        }
     }
 
-    function update_thumbnail($content) {
+    /**
+     *
+     */
+    public function update_thumbnail($content) {
         // (Re)generate thumbnail image according to the dimensions specified in the field settings.
         // If thumbnail width and height are BOTH not specified then no thumbnail is generated, and
         // additionally an attempted delete of the existing thumbnail takes place.
         global $CFG;
         require_once($CFG->libdir . '/gdlib.php');
-        $datalocation = $CFG->dataroot .'/'.$this->df->data->course.'/'.$CFG->moddata.'/dataform/'.
+        $datalocation = $CFG->dataroot .'/'.$this->df->course->id.'/'.$CFG->moddata.'/dataform/'.
                         $this->df->id().'/'.$this->field->id.'/'.$content->recordid;
         $originalfile = $datalocation.'/'.$content->content;
         if (!file_exists($originalfile)) {
@@ -264,10 +196,90 @@ class dataform_field_picture extends dataform_field_file {
         }
     }
 
-    function text_export_supported() {
+    /**
+     *
+     */
+    public function export_text_supported() {
         return false;
     }
 
-}
+    /**
+     *
+     */
+    public function import_text_supported() {
+        return false;
+    }
 
+    /**
+     *
+     */
+    protected function display_edit($recordid = 0) {
+        global $CFG;
+        $filepath = '';
+        $filename = '';
+        $description = '';
+        if ($recordid) {
+            if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+                $filename = $content->content;
+                $description = $content->content1;
+            }
+            $path = $this->df->course->id.'/'.$CFG->moddata.'/dataform/'.$this->df->id().'/'.$this->field->id.'/'.$recordid;
+            require_once($CFG->libdir.'/filelib.php');
+            $filepath = get_file_url("$path/$filename");
+        }
+        $str = '<div title="'.s($this->field->description).'">';
+        $str .= '<fieldset><legend><span class="accesshide">'.$this->field->name.'</span></legend>';
+        $str .= '<input type="hidden" name ="field_'.$this->field->id. '_'. $recordid.'_file'. '" id="field_'.$this->field->id. '_'. $recordid.'_file'. '"  value="fakevalue" />';
+        $str .= '<label for="field_'.$this->field->id. '_'. $recordid. '">'.get_string('picture','dataform'). '</label>&nbsp;'.
+                '<input type="file" name ="field_'.$this->field->id. '_'. $recordid. '" id="field_'.$this->field->id. '_'. $recordid. '" /><br />';
+        $str .= '<label for="field_'.$this->field->id. '_'. $recordid.'_filename'. '">'.get_string('alttext','dataform') .'</label>&nbsp;'.
+                '<input type="text" name="field_'. $this->field->id. '_'. $recordid.'_filename'. '" id="field_'.$this->field->id. '_'. $recordid.'_filename'. '" value="'.s($description).'" /><br />';
+        $str .= '<input type="hidden" name="MAX_FILE_SIZE" value="'.s($this->field->param3).'" />';
+        if ($filepath) {
+            // TODO filepath should not force download to work
+            $str .= '<img width="'.s($this->previewwidth).'" height="'.s($this->previewheight).'" src="'.$filepath.'?forcedownload=1" alt="" />';
+        }
+        $str .= '</fieldset>';
+        $str .= '</div>';
+        return $str;
+    }
+
+    /**
+     *
+     */
+    protected function display_browse($recordid, $thumbnail = false) {
+        global $CFG;
+        if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)){
+            if (isset($content->content)) {
+                $contents[0] = $content->content;
+                $contents[1] = $content->content1;
+            }
+            if (empty($contents[0])) {
+                // Nothing to show
+                return '';
+            }
+            $alt = empty($contents[1])? '':$contents[1];
+            $title = empty($contents[1])? '':$contents[1];
+            $src = $contents[0];
+            $path = $this->df->course->id.'/'.$CFG->moddata.'/dataform/'.$this->df->id().'/'.$this->field->id.'/'.$recordid;
+
+            $thumbnaillocation = $CFG->dataroot .'/'. $path .'/thumb/'.$src;
+            require_once($CFG->libdir.'/filelib.php');
+            $source = get_file_url("$path/$src");
+            $thumbnailsource = file_exists($thumbnaillocation) ? get_file_url("$path/thumb/$src") : $source;
+
+            if ($thumbnail) {
+                $width = $this->field->param4 ? ' width="'.s($this->field->param4).'" ' : ' ';
+                $height = $this->field->param5 ? ' height="'.s($this->field->param5).'" ' : ' ';
+                $str = '<a href="'.$source.'"><img '. $width.$height.' src="'.$thumbnailsource.'" alt="'.s($alt).'" title="'.s($title).'" style="border:0px" /></a>';
+            } else {
+                $width = $this->field->param1 ? ' width="'.s($this->field->param1).'" ':' ';
+                $height = $this->field->param2 ? ' height="'.s($this->field->param2).'" ':' ';
+                $str = '<a href="'.$source.'"><img '.$width.$height.' src="'.$source.'" alt="'.s($alt).'" title="'.s($title).'" style="border:0px" /></a>';
+            }
+            return $str;
+        }
+        return false;
+    }
+}
 ?>

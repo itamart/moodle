@@ -1,26 +1,6 @@
 <?php  // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
+
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field_url extends dataform_field_base {
     public $type = 'url';
@@ -29,12 +9,79 @@ class dataform_field_url extends dataform_field_base {
         parent::dataform_field_base($field, $df);
     }
 
-    function display_edit($recordid = 0) {
+    /**
+     *
+     */
+    public function update_content($recordid, $value='', $name='') {
+        $content = new object;
+        $content->fieldid = $this->field->id;
+        $content->recordid = $recordid;
+        if ($name) {
+            $names = explode('_', $name);
+            switch ($names[3]) {
+                case 0:
+                    // update link
+                    $content->content = clean_param($value, PARAM_URL);
+                    break;
+                case 1:
+                    // add text
+                    $content->content1 = clean_param($value, PARAM_NOTAGS);
+                    break;
+                default:
+                    break;
+            }
+
+        // update from csv    
+        } else if (strpos($value, '##') !== false) {
+            $value = explode('##', $value);
+            $content->content = clean_param($value[0], PARAM_URL);
+            $content->content1 = clean_param($value[1], PARAM_NOTAGS);
+        } else {
+            $content->content = clean_param($value, PARAM_URL);
+        }
+
+        // TODO do not update or insert if no value
+        if ($oldcontent = get_record('dataform_contents','fieldid', $this->field->id, 'recordid', $recordid)) {
+            $content->id = $oldcontent->id;
+            return update_record('dataform_contents', $content);
+        } else {
+            return insert_record('dataform_contents', $content);
+        }
+    }
+
+    /**
+     *
+     */
+    public function notemptyfield($value, $name) {
+        $names = explode('_',$name);
+        $value = clean_param($value, PARAM_URL);
+        //clean first
+        if ($names[3] == '0') {
+            return ($value!='http://' && !empty($value));
+        }
+        return false;
+    }
+
+    /**
+     *
+     */
+    public function export_text_value($content) {
+        $exporttext = $content->content;
+        if ($content->content1) {
+            $exporttext .= "##$content->content1";
+        }
+        return $exporttext;
+    }
+
+    /**
+     *
+     */
+    protected function display_edit($recordid = 0) {
         global $CFG;
         $url = '';
         $text = '';
         if ($recordid) {
-            if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+            if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)) {
                 $url  = $content->content;
                 $text = $content->content1;
             }
@@ -44,32 +91,23 @@ class dataform_field_url extends dataform_field_base {
         if (!empty($this->field->param1) and empty($this->field->param2)) {
             $str .= '<table><tr><td align="right">';
             $str .= get_string('url','dataform').':</td>'.
-                    '<td><input type="text" name="field_'. $this->field->id. '_0'. '_'. $recordid. '" id="field_'. $this->field->id. '_0'. '_'. $recordid. '" value="'.$url.'" size="60" /></td></tr>';
+                    '<td><input type="text" name="field_'. $this->field->id. '_'. $recordid. '_0'. '" id="field_'. $this->field->id. '_'. $recordid. '_0'. '" value="'.$url.'" size="60" /></td></tr>';
             $str .= '<tr><td align="right">'. get_string('text','dataform'). ':</td>'.
-                    '<td><input type="text" name="field_'. $this->field->id. '_1'. '_'. $recordid. '" id="field_'. $this->field->id. '_1'. '_'. $recordid. '" value="'.s($text).'" size="60" /></td></tr>';
+                    '<td><input type="text" name="field_'. $this->field->id. '_'. $recordid. '_1'. '" id="field_'. $this->field->id. '_'. $recordid. '_1'. '" value="'.s($text).'" size="60" /></td></tr>';
             $str .= '</table>';
         } else {
             // Just the URL field
-            $str .= '<input type="text" name="field_'.$this->field->id.'_0'. '_'. $recordid. '" id="field_'. $this->field->id. '_0'. '_'. $recordid. '" value="'.s($url).'" size="60" />';
+            $str .= '<input type="text" name="field_'.$this->field->id. '_'. $recordid.'_0'. '" id="field_'. $this->field->id. '_'. $recordid. '_0'. '" value="'.s($url).'" size="60" />';
         }
         $str .= '</div>';
         return $str;
     }
 
-    function display_search($value = '') {
-        return '<input type="text" size="16" name="f_'.$this->field->id.'" value="'.$value.'" />';
-    }
-
-    function parse_search() {
-        return optional_param('f_'.$this->field->id, '', PARAM_NOTAGS);
-    }
-
-    function get_search_sql($value) {
-        return " (c{$this->field->id}.fieldid = {$this->field->id} AND c{$this->field->id}.content LIKE '%{$value}%') ";
-    }
-
-    function display_browse($recordid) {
-        if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+    /**
+     *
+     */
+    protected function display_browse($recordid) {
+        if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)) {
             $url = empty($content->content)? '':$content->content;
             $text = empty($content->content1)? '':$content->content1;
             if (empty($url) or ($url == 'http://')) {
@@ -93,47 +131,5 @@ class dataform_field_url extends dataform_field_base {
         }
         return false;
     }
-
-    function update_content($recordid, $value, $name='') {
-        $content = new object;
-        $content->fieldid = $this->field->id;
-        $content->recordid = $recordid;
-        $names = explode('_', $name);
-        switch ($names[2]) {
-            case 0:
-                // update link
-                $content->content = clean_param($value, PARAM_URL);
-                break;
-            case 1:
-                // add text
-                $content->content1 = clean_param($value, PARAM_NOTAGS);
-                break;
-            default:
-                break;
-        }
-
-        if ($oldcontent = get_record('dataform_content','fieldid', $this->field->id, 'recordid', $recordid)) {
-            $content->id = $oldcontent->id;
-            return update_record('dataform_content', $content);
-        } else {
-            return insert_record('dataform_content', $content);
-        }
-    }
-
-    function notemptyfield($value, $name) {
-        $names = explode('_',$name);
-        $value = clean_param($value, PARAM_URL);
-        //clean first
-        if ($names[2] == '0') {
-            return ($value!='http://' && !empty($value));
-        }
-        return false;
-    }
-
-    function export_text_value($record) {
-        return $record->content . " " . $record->content1;
-    }
-
 }
-
 ?>

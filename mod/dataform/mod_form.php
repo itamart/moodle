@@ -10,7 +10,7 @@ class mod_dataform_mod_form extends moodleform_mod {
 
         $ynoptions = array(0 => get_string('no'), 1 => get_string('yes'));
         
-//-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
         $mform->addElement('header', 'general', get_string('general', 'form'));
 
         // name
@@ -28,7 +28,7 @@ class mod_dataform_mod_form extends moodleform_mod {
             //$mform->addRule('intro', null, 'required', null, 'client');
         $mform->setHelpButton('intro', array('writing', 'questions', 'richtext'), false, 'editorhelpbutton');
 
-//-------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------
         $mform->addElement('header', 'timinghdr', get_string('timing', 'form'));
 
         // time available
@@ -58,6 +58,7 @@ class mod_dataform_mod_form extends moodleform_mod {
         $mform->disabledIf('timeinterval', 'timeavailable[off]', 'checked');
         $mform->disabledIf('timeinterval', 'timedue[off]');
 
+        // number of intervals
         $numintervalsoptions = array();
         for ($i = 1; $i <= 100; $i++) {
             $numintervalsoptions[$i] = $i;
@@ -74,74 +75,42 @@ class mod_dataform_mod_form extends moodleform_mod {
         $mform->addElement('checkbox', 'allowlate', get_string('df:lateallow', 'dataform') , get_string('df:lateuse', 'dataform'));
 
 
-//-------------------------------------------------------------------------------
-        $mform->addElement('header', 'entrieshdr', get_string('entries', 'dataform'));
-        
-        // required entries
-        $countoptions = array(0=>get_string('none'))+
-                        (array_combine(range(1, DATAFORM_MAX_ENTRIES),//keys
-                                        range(1, DATAFORM_MAX_ENTRIES)));//values
-        $mform->addElement('select', 'requiredentries', get_string('requiredentries', 'dataform'), $countoptions);
-        $mform->setHelpButton('requiredentries', array('requiredentries', get_string('requiredentries', 'dataform'), 'dataform'));
-
-        // required entries to view
-        $mform->addElement('select', 'requiredentriestoview', get_string('requiredentriestoview', 'dataform'), $countoptions);
-        $mform->setHelpButton('requiredentriestoview', array('requiredentriestoview', get_string('requiredentriestoview', 'dataform'), 'dataform'));
-
-        // max entries
-        $mform->addElement('select', 'maxentries', get_string('maxentries', 'dataform'), $countoptions);
-        $mform->setHelpButton('maxentries', array('maxentries', get_string('maxentries', 'dataform'), 'dataform'));
-
-        // time limit to manage an entry
-        $timelimitgrp=array();
-        $timelimitgrp[] = &$mform->createElement('text', 'timelimit');
-        $timelimitgrp[] = &$mform->createElement('checkbox', 'timelimitenable', '', get_string('enable'));
-        $mform->addGroup($timelimitgrp, 'timelimitgrp', get_string('df:timelimit', 'dataform'), array(' '), false);
-        $mform->setType('timelimit', PARAM_TEXT);
-        $timelimitgrprules = array();
-        $timelimitgrprules['timelimit'][] = array(null, 'numeric', null, 'client');
-        $mform->addGroupRule('timelimitgrp', $timelimitgrprules);
-        $mform->disabledIf('timelimitgrp', 'timelimitenable');
-        $mform->setHelpButton('timelimitgrp', array("timelimit", get_string('entrytimer', 'dataform'), 'dataform'));
-        $mform->setDefault('timelimit', '');
-        $mform->setDefault('timelimitenable', false);
-
-        // approval
-        $mform->addElement('select', 'approval', get_string('requireapproval', 'dataform'), $ynoptions);
-        $mform->setHelpButton('approval', array('requireapproval', get_string('requireapproval', 'dataform'), 'dataform'));
-
-//-------------------------------------------------------------------------------
-        $mform->addElement('header', 'commentshdr', get_string('comments', 'dataform'));
-
-        // comments
-        $mform->addElement('select', 'comments', get_string('comments', 'dataform'), $ynoptions);
-        $mform->setHelpButton('comments', array('comments', get_string('allowcomments', 'dataform'), 'dataform'));
-
-        // rss articles
+    // rss
+    //-------------------------------------------------------------------------------
         if($CFG->enablerssfeeds && $CFG->dataform_enablerssfeeds){
+            $mform->addElement('header', 'rssshdr', get_string('rss'));
+
             $mform->addElement('select', 'rssarticles', get_string('numberrssarticles', 'dataform') , $countoptions);
         }
 
-//-------------------------------------------------------------------------------
+    // rating
+    //-------------------------------------------------------------------------------
         $mform->addElement('header', 'gradeshdr', get_string('grades', 'grades'));
 
-        // rating
-        $mform->addElement('checkbox', 'assessed', get_string('df:ratingsallow', 'dataform') , get_string('df:ratingsuse', 'dataform'));
-        $mform->addElement('modgrade', 'scale', get_string('grade'), false);
-        $mform->disabledIf('scale', 'assessed');
+        $mform->addElement('modgrade', 'rating', get_string('df:ratingactivity', 'dataform'));
+        $mform->setDefault('rating', 0);
 
+        // rating method
+        $ratingmethods = array(
+            '0' => get_string('ratingmanual', 'dataform'),
+            '1' => get_string('ratingssum', 'dataform'),
+            '2' => get_string('ratingsmax', 'dataform'),
+            '3' => get_string('ratingsmin', 'dataform')
+        );
+        $mform->addElement('select', 'ratingmethod', get_string('ratingmethod', 'dataform'), $ratingmethods);
+        $mform->setDefault('ratingmethod', 'manual');
+        $mform->disabledIf('ratingmethod', 'rating', 'eq', 0);
 
+    // common course elements
+    //-------------------------------------------------------------------------------
         $this->standard_coursemodule_elements(array('groups'=>true, 'groupings'=>true, 'groupmembersonly'=>true));
 
-//-------------------------------------------------------------------------------
-        // buttons
+    // buttons
+    //-------------------------------------------------------------------------------
         $this->add_action_buttons();
     }
 
     function data_preprocessing(&$default_values){
-        if (empty($default_values['scale'])){
-            $default_values['assessed'] = 0;
-        }
         if (!empty($default_values['timeinterval'])){
             $default_values['timedue'] = $default_values['timeinterval'] * $default_values['intervalcount'];
         }

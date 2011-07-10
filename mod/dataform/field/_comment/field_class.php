@@ -1,26 +1,6 @@
 <?php // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
+
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field__comment extends dataform_field_base {
 
@@ -39,107 +19,215 @@ class dataform_field__comment extends dataform_field_base {
     public function patterns($record = 0, $edit = false, $enabled = false) {
         $patterns = array('comments' => array());
 
+        $patterns['comments']['##comments:showinline##'] = '';
+        $patterns['comments']['##comments:showinpopup##'] = '';
+        //$patterns['comments']['##comments:addinline##'] = '';
+        $patterns['comments']['##comments:addinpopup##'] = '';
+        $patterns['comments']['##comments:showaddinpopup##'] = '';
         // if no record display nothing
         // no edit mode for this field
-        if ($record and if ($df->data->comments) {
-            $comments = count_records('dataform_comments', 'recordid', $record->id);
-            // open edit form of comment in a single view
-            $patterns['comments']['##comments:addinline##'] = '<a href="view.php?rid='.$record->id.'#comments">'.get_string('commentsn','dataform', $comments).'</a>';
-            // open edit form of comment in a single view
-            $patterns['comments']['##comments:addinpopup##'] = '<a href="view.php?rid='.$record->id.'#comments">'.get_string('commentsn','dataform', $comments).'</a>';
-            $patterns['comments']['##comments:showinline##'] = '<a href="view.php?rid='.$record->id.'#comments">'.get_string('commentsn','dataform', $comments).'</a>';
-            $patterns['comments']['##comments:showinpopup##'] = '<a href="view.php?rid='.$record->id.'#comments">'.get_string('commentsn','dataform', $comments).'</a>';
-        } else {
-            $patterns['comments']['##comments:addinline##'] = '';
-            $patterns['comments']['##comments:addinpopup##'] = '';
-            $patterns['comments']['##comments:showinline##'] = '';
-            $patterns['comments']['##comments:showinline##'] = '';
+        if ($record and $this->df->data->comments) {
+            $recordid = $record->id;
+            $fieldid = $this->field->id;
+            if ($comments = count_records('dataform_comments', 'recordid', $record->id)) {
+                $strcomments = get_string('commentsn', 'dataform', $comments);
+                $patterns['comments']['##comments:showinline##'] = $this->display_browse($record->id);
+                $patterns['comments']['##comments:showinpopup##'] = str_replace(',', '&#44;', link_to_popup_window("/mod/dataform/popup.php?rid=$recordid&amp;fid=$fieldid&amp;show=1", 'comments', $strcomments, 400, 600, null, null, true));
+                //$patterns['comments']['##comments:addinline##'] = $this->display_edit($record->id, false, true);
+                $patterns['comments']['##comments:addinpopup##'] = str_replace(',', '&#44;', link_to_popup_window("/mod/dataform/popup.php?rid=$recordid&amp;fid=$fieldid&amp;edit=1", 'comments', get_string('commentadd', 'dataform'), 400, 600, null, null, true));
+                $patterns['comments']['##comments:showaddinpopup##'] = str_replace(',', '&#44;', link_to_popup_window("/mod/dataform/popup.php?rid=$recordid&amp;fid=$fieldid&amp;show=1&amp;edit=1", 'comments', $strcomments, 400, 600, null, null, true));
+            } else {
+                $strcomments = get_string('commentsnone', 'dataform');
+                $patterns['comments']['##comments:showinline##'] = $strcomments;
+                $patterns['comments']['##comments:showinpopup##'] = $strcomments;
+                $patterns['comments']['##comments:showaddinpopup##'] = str_replace(',', '&#44;', link_to_popup_window("/mod/dataform/popup.php?rid=$recordid&amp;fid=$fieldid&amp;show=1&amp;edit=1", 'comments', $strcomments, 400, 600, null, null, true));
+            }
         }
         
         return $patterns;
     }
 
     /**
-     * prints all comments + a text box for adding additional comment
+     * 
      */
-    public function print_comments($record = 0, $page=0, $mform=false) {
-        global $CFG;
+    public function activity_patterns() {
+        
+        $patterns = array();
+            
+        return $patterns;
+    }
 
-        $cancomment = has_capability('mod/dataform:comment', $context);
-        echo '<a name="comments"></a>';
-        if ($comments = get_records('dataform_comments','recordid',$record->id)) {
-            foreach ($comments as $comment) {
-                $this->print_comment($comment, $page);
-            }
-            echo '<br />';
-        }
-        if (!isloggedin() or isguest() or !$cancomment) {
-            return;
-        }
-        $editor = optional_param('addcomment', 0, PARAM_BOOL);
-        if (!$mform and !$editor) {
-            echo '<div class="newcomment" style="text-align:center">';
-            echo '<a href="view.php?d='.$this->id().'&amp;rid='.$record->id.'&amp;mode=single&amp;addcomment=1">'.get_string('addcomment', 'dataform').'</a>';
-            echo '</div>';
+    /**
+     * 
+     */
+    public function display_popup($record = 0, $params = null) {
+        $recordid = $record ? $record->id : 0;
+
+        if (isset($params['show'])) {
+            return $this->display_browse($recordid, true);
+        } else if (isset($params['edit'])) {
+            return $this->display_edit($recordid);
         } else {
-            if (!$mform) {
-                require_once('comment_form.php');
-                $mform = new mod_dataform_comment_form('comment.php');
-                $mform->set_data(array('mode'=>'add', 'page'=>$page, 'rid'=>$record->id));
-            }
-            echo '<div class="newcomment" style="text-align:center">';
-            $mform->display();
-            echo '</div>';
+            return '';
         }
     }
 
     /**
-     * prints a single comment entry
+     * prints all comments + a text box for adding additional comment
      */
-    public function print_comment($comment, $page=0) {
+    protected function display_browse($recordid, $popup = false) {
         global $USER, $CFG;
 
-        $stredit = get_string('edit');
-        $strdelete = get_string('delete');
-        $user = get_record('user','id',$comment->userid);
-        echo '<table cellspacing="0" align="center" width="50%" class="datacomment forumpost">';
-        echo '<tr class="header"><td class="picture left">';
-        print_user_picture($user, $this->data->course, $user->picture);
-        echo '</td>';
-        echo '<td class="topic starter" align="left"><div class="author">';
-        $fullname = fullname($user, has_capability('moodle/site:viewfullnames', $this->df->context));
-        $by = new object();
-        $by->name = '<a href="'.$CFG->wwwroot.'/user/view.php?id='.
-                    $user->id.'&amp;course='.$this->data->course.'">'.$fullname.'</a>';
-        $by->date = userdate($comment->modified);
-        print_string('bynameondate', 'dataform', $by);
-        echo '</div></td></tr>';
-        echo '<tr><td class="left side">';
-        if ($groups = groups_get_all_groups($this->data->course, $comment->userid, $cm->groupingid)) {
-            print_group_picture($groups, $this->data->course, false, false, true);
-        } else {
-            echo '&nbsp;';
+        $str = '';
+        if ($comments = get_records('dataform_comments','recordid',$recordid)) {
+            foreach ($comments as $comment) {
+                $stredit = get_string('edit');
+                $strdelete = get_string('delete');
+                $user = get_record('user','id',$comment->userid);
+                
+                $str .= '<table cellspacing="0" align="center" class="dataformcomment forumpost">';
+                $str .= '<tr class="header"><td class="picture left">';
+                $str .= print_user_picture($user, $this->df->course->id, $user->picture, 0, true);
+                $str .= '</td>';
+                $str .= '<td class="topic starter" align="left"><div class="author">';
+                $fullname = fullname($user, has_capability('moodle/site:viewfullnames', $this->df->context));
+                $by = new object();
+                $by->name = '<a href="'.$CFG->wwwroot.'/user/view.php?id='.
+                            $user->id.'&amp;course='.$this->df->course->id.'">'.$fullname.'</a>';
+                $by->date = userdate($comment->modified);
+                $str .= get_string('bynameondate', 'dataform', $by);
+                $str .= '</div></td></tr>';
+                $str .= '<tr><td class="left side">';
+                if ($groups = groups_get_all_groups($this->df->course->id, $comment->userid, $this->df->cm->groupingid)) {
+                    $str .= print_group_picture($groups, $this->data->course, false, true, true);
+                } else {
+                    $str .= '&nbsp;';
+                }
+
+                // Actual content
+                $str .= '</td><td class="content" align="left">'."\n";
+                // Print whole message
+                $str .= format_text($comment->content, $comment->format);
+
+                // Commands
+                $str .= '<div class="commands">';
+                // TODO: is_entry_owner requires recordid
+                if ($this->df->user_is_entry_owner($comment->recordid) or has_capability('mod/dataform:managecomments', $this->df->context)) {
+                    //$str .= '<a href="'.$CFG->wwwroot.'/mod/dataform/comment.php?rid='.$comment->recordid.'&amp;mode=edit&amp;commentid='.$comment->id.'&amp;page='.$page.'">'.$stredit.'</a>';
+                    if ($popup) {
+                        $edit = optional_param('edit', 0, PARAM_BOOL);
+                        $str .= '<a href="'.$CFG->wwwroot.'/mod/dataform/popup.php?rid='. $recordid. '&amp;fid='. $this->field->id. '&amp;show=1&amp;edit='. $edit. '&amp;delete='. $comment->id. '&amp;sesskey='. sesskey(). '">'.$strdelete.'</a>';
+                    } else {
+                        $str .= '<a href="'.$CFG->wwwroot.'/mod/dataform/view.php?d='. $this->df->id(). '&amp;deletecomment='. $comment->id. '&amp;sesskey='. sesskey(). '">'.$strdelete.'</a>';
+                    }
+                }
+
+                $str .= '</div>';
+                $str .= '</td></tr></table>'."\n\n";
+            }
+        }
+        return $str;
+    }   
+
+    /**
+     * 
+     */
+    protected function display_edit($recordid, $htmleditor = true, $savebutton = false) {
+        $str = '';
+        
+        $cancomment = has_capability('mod/dataform:comment', $this->df->context);
+        if (isloggedin() and !isguest() and $cancomment) {
+
+            $str .= print_textarea($htmleditor, 7, 15, 0, 0, 'field_comment', '', 0, true);
+            
         }
 
-    // Actual content
-        echo '</td><td class="content" align="left">'."\n";
-        // Print whole message
-        echo format_text($comment->content, $comment->format);
-
-    // Commands
-        echo '<div class="commands">';
-        // TODO: is_entry_owner requires recordid
-        if ($this->user_is_entry_owner($comment->recordid) or has_capability('mod/dataform:managecomments', $context)) {
-                echo '<a href="'.$CFG->wwwroot.'/mod/dataform/comment.php?rid='.$comment->recordid.'&amp;mode=edit&amp;commentid='.$comment->id.'&amp;page='.$page.'">'.$stredit.'</a>';
-                echo '| <a href="'.$CFG->wwwroot.'/mod/dataform/comment.php?rid='.$comment->recordid.'&amp;mode=delete&amp;commentid='.$comment->id.'&amp;page='.$page.'">'.$strdelete.'</a>';
+        if ($savebutton) {
+            $str .= '<div style="text-align:center">'.
+                '<input type="submit" name="saveandview" value="'. get_string('saveandview','dataform'). '" />'.
+                '</div>';
         }
+        return $str;
+    }    
 
-        echo '</div>';
-        echo '</td></tr></table>'."\n\n";
+    /**
+     * TODO
+     */
+    public function get_search_sql($value = '') {
+        return '';
     }
 
+    /**
+     * TODO: use join?
+     */
+    public function get_sort_sql() {
+        return "(Select count(recordid) From mdl_dataform_comments as cm Where cm.recordid = r.id)";
+    }
+
+    /**
+     * 
+     */
+    public function update_content($recordid, $value='', $name='') {
+        global $CFG, $USER;
+
+        $comment = new object();
+        if ($commentid = optional_param('commentid', 0, PARAM_INT)) {
+            $comment->id       = $commentid;
+            $comment->content  = $value;
+            $comment->format   = $formadata->format;
+            $comment->modified = time();
+            update_record('dataform_comments',$comment);
     
+        // new comment
+        } else {
+            $comment->userid   = $USER->id;
+            $comment->created  = time();
+            $comment->modified = time();
+            $comment->content  = $value;
+            $comment->recordid = $recordid;
+            insert_record('dataform_comments',$comment);
+        }
+    }
     
-    
+    /**
+     * Delete all content associated with the field
+     */
+    public function delete_content($recordid = 0, $commentid = 0) {
+        if ($commentid) {
+            delete_records('dataform_comments', 'id', $commentid);
+        } else if ($recordid) {
+            delete_records('dataform_comments', 'recordid', $recordid);
+        }
+    }
+
+    /**
+     * returns an array of distinct content of the field
+     */
+    public function get_distinct_content($sortdir = 0) {
+        return false;
+    }
+
+    /**
+     * returns an array of distinct content of the field
+     */
+    public function print_after_form() {
+        if (can_use_richtext_editor()) {
+            use_html_editor('field_comment', '', 'edit-field_comment');
+        }
+    }
+
+    /**
+     *
+     */
+    public function export_text_supported() {
+        return false;
+    }
+
+    /**
+     *
+     */
+    public function import_text_supported() {
+        return false;
+    }
 }
 ?>

@@ -1,30 +1,6 @@
 <?php // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
 
-//2/19/07:  Advanced search of the date field is currently disabled because it does not track
-// pre 1970 dates and does not handle blank entrys.  Advanced search functionality for this field
-// type can be enabled once these issues are addressed in the core API.
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field__user extends dataform_field_base {
 
@@ -40,49 +16,143 @@ class dataform_field__user extends dataform_field_base {
     /**
      * 
      */
-    public function display_search($value = '') {
-        // TODO: get list of course participants and display it
-        //choose_from_menu($orderoptions, 'customsort_'. $fieldid, $sortorder, 'choose' , '', 0 , true)    
-        $str = '<input type="text" size="16" name="f_'. $this->field->id. '" value="'. $value. '" />';
-        return $str;
+    public function patterns($record = 0, $edit = false, $enabled = false) {
+        global $CFG, $USER;
+        
+        $patterns = array('authorinfo' => array());
+
+        if (!$record) { // new record (0)
+            $record = new object();
+            $record->userid = $USER->id;
+            $record->username = $USER->username;
+            $record->firstname = $USER->firstname;
+            $record->lastname = $USER->lastname;
+            $record->idnumber = $USER->idnumber;
+            $record->picture = $USER->picture;
+        }
+
+        // no edit mode for this field
+         switch ($this->field->internalname) {
+            case 'name':
+                $patterns['authorinfo']['##author:name##'] = '<a href="'. $CFG->wwwroot. '/user/view.php?id='. $record->userid.
+                            '&amp;course='. $this->df->course->id.'">'. fullname($record). '</a>';
+                break;
+
+            case 'firstname':
+                $patterns['authorinfo']['##author:firstname##'] = $record->firstname;
+                break;
+
+            case 'lastname':
+                $patterns['authorinfo']['##author:lastname##'] = $record->lastname;
+                break;
+
+            case 'username':
+                $patterns['authorinfo']['##author:username##'] = $record->username;
+                break;
+
+            case 'id':
+                $patterns['authorinfo']['##author:id##'] = $record->userid;
+                break;
+
+            case 'idnumber':
+                $patterns['authorinfo']['##author:idnumber##'] = $record->idnumber;
+                break;
+
+            // TODO: print_user_picture deprecated in 2.0
+            case 'picture':
+                $patterns['authorinfo']['##author:picture##'] = print_user_picture($record->userid, $this->df->course->id, get_field('user','picture','id',$record->userid), false, true);
+                $patterns['authorinfo']['##author:picturelarge##'] = print_user_picture($record->userid, $this->df->course->id, get_field('user','picture','id',$record->userid), true, true);
+                break;
+        }
+        
+        return $patterns;
     }
     
     /**
-     * 
+     *
      */
-    public function patterns($record = 0, $edit = false, $enabled = false) {
-        return NULL;
-    }
-            
-    /**
-     * 
-     */
-    public function get_search_sql($value = '') {
-        if ($value) {
-            return ' u.'. $this->field->name. ' '. sql_ilike(). "'%". $value. "%' ";
-        } else {
-            return '';
-        }
-    }
-
-    /**
-     * 
-     */
-    public function parse_search() {
-        return optional_param('f_'.$this->field->id, '', PARAM_NOTAGS);
-    }
-
-    /**
-     * 
-     */
-    public function update_content($recordid, $value, $name='') {
+    public function get_compare_text() {
+        // the sort sql here returns the field's sql name
+        return $this->get_sort_sql();
     }
 
     /**
      * 
      */
     public function get_sort_sql() {
-        return 'r.'. $this->field->name;
+        if ($this->field->internalname != 'picture') {
+            if ($this->field->internalname == 'name') {
+                $internalname = 'id';
+            } else {
+                $internalname = $this->field->internalname;
+            }
+            return 'u.'. $internalname;
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * returns an array of distinct content of the field
+     */
+    public function get_distinct_content($sortdir = 0) {
+        global $CFG;
+        $contentfull = $this->get_sort_sql();
+        $sql = 'SELECT DISTINCT '. $contentfull.
+                        ' FROM '. $CFG->prefix. 'user u '. 
+                        ' WHERE '. $contentfull. ' IS NOT NULL'.
+                        ' ORDER BY '. $contentfull. ' '. ($sortdir ? 'DESC' : 'ASC');
+
+        $distinctvalues = array();
+        if ($options = get_records_sql($sql)) {
+            if ($this->field->internalname == 'name') {
+                $internalname = 'id';
+            } else {
+                $internalname = $this->field->internalname;
+            }
+            foreach ($options as $data) {
+                $value = $data->{$internalname};
+                if ($value === '') {
+                    continue;
+                }
+                $distinctvalues[] = $value;
+            }
+        }
+        return $distinctvalues;
+    }
+
+    /**
+     * 
+     */
+    public function update_content($recordid, $value='', $name='') {
+        return true;
+    }
+
+    /**
+     *
+     */
+    public function export_text_supported() {
+        if ($this->field->internalname == 'picture') {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     *
+     */
+    public function export_text_value($entry) {
+        if ($this->field->internalname != 'picture') {
+            if ($this->field->internalname == 'name' or $this->field->internalname == 'id') {
+                $internalname = 'userid';
+            } else {
+                $internalname = $this->field->internalname;
+            }
+            return $entry->{$internalname};
+        } else {
+            return '';
+        }
     }
 
 }

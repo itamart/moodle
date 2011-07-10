@@ -1,29 +1,7 @@
-﻿<?php  // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 2005 Martin Dougiamas  http://dougiamas.com             //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
+<?php  // $Id$
 
 require_once('../../config.php');
-require_once('lib.php');
+require_once('mod_class.php');
 
 
 $id         = optional_param('id', 0, PARAM_INT);            // course module id
@@ -45,7 +23,6 @@ $confirm    = optional_param('confirm', 0, PARAM_INT);
 // Set a dataform object
 $df = new dataform($d, $id);
 
-require_login($df->course->id, false, $df->cm);
 require_capability('mod/dataform:managetemplates', $df->context);
 
 
@@ -105,9 +82,9 @@ $currenttab = 'views';
 include('tabs.php');
 
 // Notifications first
-if (!$views = get_records('dataform_views', 'dataid', $df->id())) {
+if (!$views = $df->get_views()) {
     notify(get_string('noviewsindataform','dataform'));  // nothing in database
-    notify(get_string('pleaseaddsome','dataform', 'preset.php?id='.$df->cm->id));      // link to presets
+    notify(get_string('pleaseaddsome','dataform', 'presets.php?d='.$df->id()));      // link to presets
 } else if (empty($df->data->defaultview)) {
     notify(get_string('nodefaultview','dataform'));
 }
@@ -115,16 +92,15 @@ if (!$views = get_records('dataform_views', 'dataid', $df->id())) {
 // Display the view form jump list
 $directories = get_list_of_plugins('mod/dataform/view/');
 $menuview = array();
-
 foreach ($directories as $directory){
-    $menuview[$directory] = get_string($directory,'dataform');    //get from language files
+    $menuview[$directory] = get_string('viewtype'. $directory, 'dataform');    //get from language files
 }
 asort($menuview);    //sort in alphabetical order
 
 echo '<br />';
 echo '<div class="fieldadd">';
 echo '<label for="viewform_jump">'.get_string('viewcreate','dataform').'</label>&nbsp;';
-popup_form($CFG->wwwroot.'/mod/dataform/view_edit.php?d='. $df->id().'&amp;sesskey='.
+popup_form($CFG->wwwroot.'/mod/dataform/view/view_edit.php?d='. $df->id().'&amp;sesskey='.
         sesskey().'&amp;type=', $menuview, 'viewform', '', 'choose');
 helpbutton('views', get_string('addaview','dataform'), 'dataform');
 echo '</div>';
@@ -172,8 +148,7 @@ if ($views) {
     $table->align = array('left', 'left', 'left', 'center', 'center', 'center', 'center', 'center', 'center');
     $table->wrap = array(false, false, false, false, false, false, false, false, false);
     
-    foreach ($views as $v) {
-        $view = $df->get_view($v);
+    foreach ($views as $view) {
         
         // prepare visibility
         $visibility = '<a href="views.php?d='. $df->id().'&amp;visible='.$view->view->id.'&amp;sesskey='.sesskey().'">';
@@ -213,10 +188,10 @@ if ($views) {
         //$table->add_data(array(
         $table->data[] = array(
             // name
-            '<a href="view_edit.php?d='. $df->id().
+            '<a href="view/view_edit.php?d='. $df->id().
                 '&amp;vid='.$view->view->id.'&amp;sesskey='.sesskey().'">'.$view->view->name.'</a>',
             // type
-            $view->image().'&nbsp;'.get_string($view->type(), 'dataform'),
+            $view->image().'&nbsp;'.get_string('viewtype'. $view->type(), 'dataform'),
             // description
             shorten_text($view->view->description, 30),
             // visibility
@@ -226,7 +201,7 @@ if ($views) {
             // filter
             $viewfilter,
             // edit
-            '<a href="view_edit.php?d='. $df->id().'&amp;vid='.$view->view->id.'&amp;sesskey='.sesskey().'">'.
+            '<a href="view/view_edit.php?d='. $df->id().'&amp;vid='.$view->view->id.'&amp;sesskey='.sesskey().'">'.
             '<img src="'.$CFG->pixpath.'/t/edit.gif" class="ic
             onsmall" alt="'. $stredit. '" title="'. $stredit. '" /></a>',
             // delete

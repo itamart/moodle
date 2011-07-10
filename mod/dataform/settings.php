@@ -11,14 +11,30 @@ if (empty($CFG->enablerssfeeds)) {
 }
 $settings->add(new admin_setting_configselect('dataform_enablerssfeeds', get_string('enablerssfeeds', 'admin'),
                    $str, 0, $options));
+
+$unlimited = get_string('unlimited');
+$keys = range(0,500);
+$values = range(1,500);
+array_unshift($values, $unlimited);
                    
+// max fields
+$options = array_combine($keys, $values);
+$settings->add(new admin_setting_configselect('dataform_maxfields', get_string('fieldsmax', 'dataform'),
+                   get_string('configmaxfields', 'dataform'), $unlimited, $options));
+
 // max views
-$options = array();
-for ($i=1; $i<20; $i++) {
-    $options[$i] = $i;
-}
-$settings->add(new admin_setting_configselect('dataform_maxviews', get_string('maxviews', 'dataform'),
-                   get_string('configmaxviews', 'dataform'), 5, $options));
-                   
+$options = array_combine($keys, $values);
+$settings->add(new admin_setting_configselect('dataform_maxviews', get_string('viewsmax', 'dataform'),
+                   get_string('configmaxviews', 'dataform'), $unlimited, $options));
+
+// max filters
+$options = array_combine($keys, $values);
+$settings->add(new admin_setting_configselect('dataform_maxfilters', get_string('filtersmax', 'dataform'),
+                   get_string('configmaxfilters', 'dataform'), $unlimited, $options));
+
+// max entries
+$options = array_combine($keys, $values);
+$settings->add(new admin_setting_configselect('dataform_maxentries', get_string('entriesmax', 'dataform'),
+                   get_string('configmaxentries', 'dataform'), $unlimited, $options));
 
 ?>

@@ -33,6 +33,79 @@
 
 $mod_dataform_capabilities = array(
 
+    'mod/dataform:managetemplates' => array(
+
+        'riskbitmask' => RISK_SPAM | RISK_XSS,
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:manageuserpresets' => array(
+
+        'riskbitmask' => RISK_SPAM | RISK_XSS,
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:viewalluserpresets' => array(
+
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:manageentries' => array(
+
+        'riskbitmask' => RISK_SPAM,
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:approve' => array(
+
+        'riskbitmask' => RISK_SPAM,
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:managecomments' => array(
+
+        'riskbitmask' => RISK_SPAM,
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
     'mod/dataform:viewentry' => array(
 
         'captype' => 'read',
@@ -74,97 +147,35 @@ $mod_dataform_capabilities = array(
         )
     ),
 
-    'mod/dataform:viewrating' => array(
+    'mod/dataform:rateactivity' => array(
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:rateentry' => array(
+
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_MODULE,
+        'legacy' => array(
+            'teacher' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW,
+            'admin' => CAP_ALLOW
+        )
+    ),
+
+    'mod/dataform:viewentryrating' => array(
 
         'captype' => 'read',
         'contextlevel' => CONTEXT_MODULE,
         'legacy' => array(
             'teacher' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:rate' => array(
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:approve' => array(
-
-        'riskbitmask' => RISK_SPAM,
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:manageentries' => array(
-
-        'riskbitmask' => RISK_SPAM,
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:managecomments' => array(
-
-        'riskbitmask' => RISK_SPAM,
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:managetemplates' => array(
-
-        'riskbitmask' => RISK_SPAM | RISK_XSS,
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:viewalluserpresets' => array(
-
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
-            'teacher' => CAP_ALLOW,
-            'editingteacher' => CAP_ALLOW,
-            'admin' => CAP_ALLOW
-        )
-    ),
-
-    'mod/dataform:manageuserpresets' => array(
-
-        'riskbitmask' => RISK_SPAM | RISK_XSS,
-
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_MODULE,
-        'legacy' => array(
             'admin' => CAP_ALLOW
         )
     )

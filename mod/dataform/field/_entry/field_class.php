@@ -1,30 +1,6 @@
 <?php // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
 
-//2/19/07:  Advanced search of the date field is currently disabled because it does not track
-// pre 1970 dates and does not handle blank entrys.  Advanced search functionality for this field
-// type can be enabled once these issues are addressed in the core API.
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field__entry extends dataform_field_base {
 
@@ -34,84 +10,151 @@ class dataform_field__entry extends dataform_field_base {
      * 
      */
     public function dataform_field__entry($field = 0, $df = 0) {
-        parent::dataform_field_base($field, $df);
-    }
-
-    /**
-     * 
-     */
-    public function display_search($value = 0) {
-        return '';
-    }
-    
-    /**
-     * 
-     */
-    public function display_sort($order = 0, $dir = 0) {
-        return '';
-    }
-    
-    /**
-     * 
-     */
-    public function patterns($record = 0, $edit = false, $enabled = false) {
         global $CFG;
         
-        $patterns = array();
-        if (!$record) { // new record (0) displays nothing
-            $patterns['actions'] = array();
+        parent::dataform_field_base($field, $df);
+
+        // df data settings
+        $this->field->entriesrequired = $this->df->data->entriesrequired;
+        $this->field->entriestoview = $this->df->data->entriestoview;
+        if (!$this->df->data->maxentries or $this->df->data->maxentries > $CFG->dataform_maxentries) {
+            $this->field->maxentries = $CFG->dataform_maxentries;
+        } else {
+            $this->field->maxentries = $this->df->data->maxentries;
+        }
+        $this->field->timelimit = $this->df->data->timelimit;
+        $this->field->approval = $this->df->data->approval;
+        $this->field->comments = $this->df->data->comments;
+        $this->field->entryrating = $this->df->data->entryrating;
+        $this->field->lockonapproval = $this->df->data->locks & $this->df->locks('approval');
+        $this->field->lockoncomments = $this->df->data->locks & $this->df->locks('comments');
+        $this->field->lockonratings = $this->df->data->locks & $this->df->locks('ratings');
+        $this->field->singleedit = $this->df->data->singleedit;
+        $this->field->singleview = $this->df->data->singleview;
+        
+        // set_field shouldn't be called in the constructor for builtin fields
+    }
+
+    /**
+     * Sets up a field object
+     */
+    public function set_field($forminput = null) {
+        // df entry settings
+        if (isset($forminput->entriesrequired)) $this->field->entriesrequired = $forminput->entriesrequired;
+        if (isset($forminput->entriestoview)) $this->field->entriestoview = $forminput->entriestoview;
+        if (isset($forminput->maxentries)) $this->field->maxentries = $forminput->maxentries;
+        if (isset($forminput->timelimit)) $this->field->timelimit = $forminput->timelimit;
+        if (isset($forminput->approval)) $this->field->approval = $forminput->approval;
+        if (isset($forminput->comments)) $this->field->comments = $forminput->comments;
+        if (isset($forminput->entryrating)) $this->field->entryrating = $forminput->entryrating;
+        // locks
+        if (isset($forminput->lockonapproval)) $this->field->lockonapproval = $forminput->lockonapproval;
+        if (isset($forminput->lockoncomments)) $this->field->lockoncomments = $forminput->lockoncomments;
+        if (isset($forminput->lockonratings)) $this->field->lockonratings = $forminput->lockonratings;
+        
+        if (isset($forminput->singleedit)) $this->field->singleedit = $forminput->singleedit;
+        if (isset($forminput->singleview)) $this->field->singleview = $forminput->singleview;
+
+        return true;
+    }
+
+    /**
+     * Update a field in the database
+     */
+    public function update_field() {
+        // update entry settings in the dataform
+        $entrysettings = new object();
+        $entrysettings->id = $this->df->id();
+        $entrysettings->entriesrequired = $this->field->entriesrequired;
+        $entrysettings->entriestoview = $this->field->entriestoview;
+        $entrysettings->maxentries = $this->field->maxentries;
+        $entrysettings->timelimit = $this->field->timelimit;
+        $entrysettings->approval = $this->field->approval;
+        $entrysettings->comments = $this->field->comments;
+        $entrysettings->entryrating = $this->field->entryrating;
+        $entrysettings->locks = $this->field->lockonapproval | $this->field->lockoncomments | $this->field->lockonratings;
+        $entrysettings->singleedit = $this->field->singleedit;
+        $entrysettings->singleview = $this->field->singleview;
+        
+        
+        if (!update_record('dataform', $entrysettings)) {
+            notify('updating of entry settings failed!');
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 
+     */
+    public function insert_field() {
+        return false;
+    }
+
+    /**
+     * 
+     */
+    public function delete_field() {
+        return false;
+    }
+
+    /**
+     * 
+     */
+    public function update_content($recordid, $value='', $name='') {
+        return true;
+    }
+
+    /**
+     * 
+     */
+    public function patterns($entry = 0, $edit = false, $enabled = false) {
+        global $CFG;
+        
+        $patterns = array(
+            'actions' => array(),
+            'reference' => array(),
+            'entryinfo' => array()
+        );
+        
+        if (!$entry) { // new entry (0) displays nothing
             $patterns['actions']['##edit##'] = '';
             $patterns['actions']['##delete##'] = '';
-            $patterns['actions']['##approve##'] = '';
             $patterns['actions']['##select##'] = '';
 
-            $patterns['reference'] = array();
             $patterns['reference']['##more##'] = '';
             $patterns['reference']['##moreurl##'] = '';
 
-            $patterns['entryinfo'] = array();
             $patterns['entryinfo']['##entryid##'] = '';
-            $patterns['entryinfo']['##approved##'] = '';
-
-            $patterns['authorinfo'] = array();
-            $patterns['authorinfo']['##author##'] = '';
-            $patterns['authorinfo']['##author:id##'] = '';
-            $patterns['authorinfo']['##author:picture##'] = '';
-            $patterns['authorinfo']['##author:picturelarge##'] = '';
 
         } else {  // no edit mode for this field
-            $patterns = array();
- 
-            // actions
-            $patterns['actions'] = array();
-            // TODO: should allow selecting for duplicating purposes
-            $patterns['actions']['##select##'] = !$enabled ? '' : '<input type="checkbox" name="selector_'. $record->id. '" />';
-            $patterns['actions']['##edit##'] = !$enabled ? '' : '<a href="'. $CFG->wwwroot. '/mod/dataform/view.php?d='. $this->df->id(). '&amp;editentries='. $record->id. '&amp;sesskey='. sesskey(). '"><img src="'. $CFG->pixpath. '/t/edit.gif" class="iconsmall" alt="'. get_string('edit', 'dataform'). '" title="'. get_string('edit', 'dataform'). '" /></a>';
-            $patterns['actions']['##delete##'] = !$enabled ? '' : '<a href="'. $CFG->wwwroot. '/mod/dataform/view.php?d='. $this->df->id(). '&amp;delete='. $record->id. '&amp;sesskey='. sesskey(). '"><img src="'. $CFG->pixpath. '/t/delete.gif" class="iconsmall" alt="'. get_string('delete', 'dataform'). '" title="'. get_string('delete', 'dataform'). '" /></a>';
-
-            // approve
-            $approvable = $this->df->data->approval and has_capability('mod/dataform:approve', $this->df->context);
-            $toapprove = $record->approved ? 'disapprove' : 'approve';
-            $patterns['actions']['##approve##'] = !$approvable ? '' : '<a href="'. $CFG->wwwroot. '/mod/dataform/view.php?d='. $this->df->id(). '&amp;'. $toapprove. '='. $record->id. '&amp;sesskey='. sesskey(). '"><img src="'. $CFG->pixpath. '/i/'. $toapprove. '.gif" class="iconsmall" alt="'. get_string($toapprove, 'dataform'). '" title="'. get_string('approve', 'dataform'). '" /></a>';
-
             // reference
-            $patterns['reference'] = array();
-            $moreurl = $CFG->wwwroot. '/mod/dataform/view.php?rid='. $record->id;
+            if ($this->field->singleview) {
+                $baseurl = preg_replace('/([\s\S]+)view=\d+([\s\S]*)/', '$1view='. $this->field->singleview. '$2', $entry->baseurl);
+            } else {
+                $baseurl = $entry->baseurl;
+            }
+            $moreurl = $baseurl. '&amp;rid='. $entry->id;
             $patterns['reference']['##more##'] = '<a href="' . $moreurl . '"><img src="' . $CFG->pixpath . '/i/search.gif" class="iconsmall" alt="' . get_string('more', 'dataform') . '" title="' . get_string('more', 'dataform') . '" /></a>';
             $patterns['reference']['##moreurl##'] = $moreurl;
 
-            // author info
-            // TODO: print_user_picture deprecated in 2.0
-            $patterns['authorinfo'] = array();
-            $patterns['authorinfo']['##author##'] = '<a href="'. $CFG->wwwroot. '/user/view.php?id='. $record->userid.
-                                '&amp;course='. $this->df->course->id.'">'. fullname($record). '</a>';            
-            $patterns['authorinfo']['##author:id##'] = $record->userid;
-            $patterns['authorinfo']['##author:picture##'] = print_user_picture($record->userid, $this->df->course->id, get_field('user','picture','id',$record->userid), false, true);
-            $patterns['authorinfo']['##author:picturelarge##'] = print_user_picture($record->userid, $this->df->course->id, get_field('user','picture','id',$record->userid), true, true);
+            // TODO: should allow selecting for duplicating purposes
+            $patterns['actions']['##select##'] = !$enabled ? '' : '<input type="checkbox" name="selector_'. $entry->id. '" />';
+
+            // edit
+            if ($this->field->singleedit) {
+                $baseurl = preg_replace('/([\s\S]+)view=\d+([\s\S]*)/', '$1view='. $this->field->singleedit. '$2', $entry->baseurl). '&amp;rid='. $entry->id;
+            } else {
+                $baseurl = $entry->baseurl;
+            }
+            $editurl = $baseurl. '&amp;editentries='. $entry->id. '&amp;sesskey='. sesskey();
+            $patterns['actions']['##edit##'] = !$enabled ? '' : '<a href="'. $editurl. '"><img src="'. $CFG->pixpath. '/t/edit.gif" class="iconsmall" alt="'. get_string('edit', 'dataform'). '" title="'. get_string('edit', 'dataform'). '" /></a>';
+
+            // delete
+            $patterns['actions']['##delete##'] = !$enabled ? '' : '<a href="'. $entry->baseurl. '&amp;delete='. $entry->id. '&amp;sesskey='. sesskey(). '"><img src="'. $CFG->pixpath. '/t/delete.gif" class="iconsmall" alt="'. get_string('delete', 'dataform'). '" title="'. get_string('delete', 'dataform'). '" /></a>';
 
             // entry info
-            $patterns['entryinfo'] = array();
-            $patterns['entryinfo']['##entryid##'] = $record->id;
+            $patterns['entryinfo']['##entryid##'] = $entry->id;
         }        
             
         return $patterns;
@@ -120,28 +163,22 @@ class dataform_field__entry extends dataform_field_base {
     /**
      * 
      */
-    public function get_search_sql($value) {
+    public function display_search($mform, $i) {
+        return '';
+    }
+    
+    /**
+     * 
+     */
+    public function get_search_sql($search) {
         return '';
     }
 
     /**
      * 
      */
-    public function parse_search() {
-        return '';
-    }
-
-    /**
-     * 
-     */
-    public function parse_sort() {
-        return '';
-    }
-
-    /**
-     * 
-     */
-    public function update_content($recordid, $value, $name='') {
+    public function parse_search($formdata, $i) {
+        return false;
     }
 
     /**
@@ -149,6 +186,20 @@ class dataform_field__entry extends dataform_field_base {
      */
     public function get_sort_sql() {
         return '';
+    }
+
+    /**
+     * returns an array of distinct content of the field
+     */
+    public function get_distinct_content($sortdir = 0) {
+        return false;
+    }
+
+    /**
+     *
+     */
+    public function export_text_value($entry) {
+        return $entry->id;
     }
 
 }

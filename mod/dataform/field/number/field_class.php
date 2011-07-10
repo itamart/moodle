@@ -1,26 +1,6 @@
 <?php // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
+
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field_number extends dataform_field_base {
     public $type = 'number';
@@ -29,7 +9,10 @@ class dataform_field_number extends dataform_field_base {
         parent::dataform_field_base($field, $df);
     }
 
-    function update_content($recordid, $value, $name='') {
+    /**
+     *
+     */
+    public function update_content($recordid, $value='', $name='') {
         $content = new object;
         $content->fieldid = $this->field->id;
         $content->recordid = $recordid;
@@ -39,17 +22,45 @@ class dataform_field_number extends dataform_field_base {
         } else {
             $content->content = null;
         }
-        if ($oldcontent = get_record('dataform_content','fieldid', $this->field->id, 'recordid', $recordid)) {
+        if ($oldcontent = get_record('dataform_contents','fieldid', $this->field->id, 'recordid', $recordid)) {
             $content->id = $oldcontent->id;
-            return update_record('dataform_content', $content);
+            return update_record('dataform_contents', $content);
         } else {
-            return insert_record('dataform_content', $content);
+            return insert_record('dataform_contents', $content);
         }
     }
 
+    /**
+     *
+     */
+    public function get_compare_text() {
+        return sql_compare_text("c{$this->field->id}.content");
+    }
+
+    /**
+     *
+     */
+    public function get_sort_sql($fieldname) {
+        global $CFG;
+        switch ($CFG->dbfamily) {
+            case 'mysql':
+                // string in an arithmetic operation is converted to a floating-point number
+                return '('.$fieldname.'+0.0)';
+            case 'postgres':
+                // cast for PG
+                return 'CAST('.$fieldname.' AS REAL)';
+            default:
+                // the rest, just the field name. TODO: Analyse behaviour under MSSQL and Oracle
+                return $fieldname;
+        }
+    }
+
+    /**
+     *
+     */
     protected function display_edit($recordid = 0) {
         if ($recordid){
-            $content = get_field('dataform_content', 'content', 'fieldid', $this->field->id, 'recordid', $recordid);
+            $content = get_field('dataform_contents', 'content', 'fieldid', $this->field->id, 'recordid', $recordid);
         } else {
             $content = '';
         }
@@ -79,8 +90,11 @@ class dataform_field_number extends dataform_field_base {
         return $str;
     }
 
+    /**
+     *
+     */
     protected function display_browse($recordid) {
-        if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+        if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)) {
             if (strlen($content->content) < 1) {
                 return false;
             }
@@ -99,34 +113,6 @@ class dataform_field_number extends dataform_field_base {
             return $str;
         }
         return false;
-    }
-
-    function display_search($value = '') {
-        return '<input type="text" size="16" name="f_'.$this->field->id.'" value="'.$value.'" />';
-    }
-
-    function parse_search() {
-        return optional_param('f_'.$this->field->id, '', PARAM_NOTAGS);
-    }
-
-    function get_search_sql($value) {
-        $varcharcontent = sql_compare_text("c{$this->field->id}.content");
-        return " (c{$this->field->id}.fieldid = {$this->field->id} AND $varcharcontent = '$value') ";
-    }
-
-    function get_sort_sql($fieldname) {
-        global $CFG;
-        switch ($CFG->dbfamily) {
-            case 'mysql':
-                // string in an arithmetic operation is converted to a floating-point number
-                return '('.$fieldname.'+0.0)';
-            case 'postgres':
-                // cast for PG
-                return 'CAST('.$fieldname.' AS REAL)';
-            default:
-                // the rest, just the field name. TODO: Analyse behaviour under MSSQL and Oracle
-                return $fieldname;
-        }
     }
 
 }

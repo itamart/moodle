@@ -1,29 +1,7 @@
 ﻿<?php  // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 2005 Martin Dougiamas  http://dougiamas.com             //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
 
 require_once('../../config.php');
-require_once('lib.php');
+require_once('mod_class.php');
 
 
 $id         = optional_param('id', 0, PARAM_INT);            // course module id
@@ -35,7 +13,6 @@ $new        = optional_param('new', 0, PARAM_INT);     // new filter
 
 $show       = optional_param('show', 0, PARAM_INT);     // filter show/hide flag
 $hide       = optional_param('hide', 0, PARAM_INT);     // filter show/hide flag
-//$default    = optional_param('default', 0, PARAM_INT);  // id of filter to default
 $edit       = optional_param('edit', 0, PARAM_INT);     // id of filter to edit
 $delete     = optional_param('delete', 0, PARAM_SEQUENCE);   // ids (comma delimited) of filters to delete
 $duplicate  = optional_param('duplicate', 0, PARAM_SEQUENCE);   // ids (comma delimited) of filters to duplicate
@@ -43,15 +20,12 @@ $duplicate  = optional_param('duplicate', 0, PARAM_SEQUENCE);   // ids (comma de
 $confirm    = optional_param('confirm', 0, PARAM_INT);    
 
 // filter actions
-$add        = optional_param('add', 0, PARAM_INT);      // add new filter
 $update     = optional_param('update', 0, PARAM_INT);   // update filter
 $cancel     = optional_param('cancel', '');
 
 // Set a dataform object
 $df = new dataform($d, $id);
 
-require_login($df->course->id, false, $df->cm);
-$df->context = get_context_instance(CONTEXT_MODULE, $df->cm->id);
 require_capability('mod/dataform:managetemplates', $df->context);
 
 // Print the browsing interface
@@ -63,12 +37,11 @@ print_header_simple($df->name(), '', $navigation,
 
 print_heading(format_string($df->name()));
 
-// DATA PROCESSING
-if ($cancel) {
-    $add = $update = 0;
-}
+// Print the tabs
+$currenttab = 'filters';
+include('tabs.php');
 
-// check for multi actions
+// DATA PROCESSING
 if ($forminput = data_submitted($CFG->wwwroot.'/mod/dataform/filters.php') and confirm_sesskey()) {
     if (!empty($forminput->multiduplicate) or !empty($forminput->multidelete)) {
         $fids = array();
@@ -103,42 +76,22 @@ if ($duplicate and confirm_sesskey()) {  // Duplicate any requested filters
 } else if ($hide and confirm_sesskey()) {   // set filter to visible
     $df->process_filters('hide', $hide, true);    // confirmed by default
 
-// add or update
-} else if ($forminput = data_submitted($CFG->wwwroot.'/mod/dataform/filters.php')) {
-
-    if ($add and confirm_sesskey()) {    // add a new filter
-        // Only add this filter if its name doesn't already exist
-        if (($forminput->name == '') or $df->name_exists('filters', $forminput->name)) {
-            $displaynoticebad = get_string('filterinvalidname','dataform');
-        } else {
-            $df->process_filters('add', 0, true);    // confirmed by default
-        }
-
-    } else if ($update and confirm_sesskey()) {   // update filter
-        // Only update this filter if its name doesn't already exist
-        if (($forminput->name == '') or $df->name_exists('filters', $forminput->name, $update)) {
-            $displaynoticebad = get_string('filterinvalidname','dataform');
-        } else {
-            $df->process_filters('add', $update, true);    // confirmed by default
-        }
-    }
+} else if ($update and confirm_sesskey()) {  // Add/update a new filter
+    $df->process_filters('update', $fid, true);
 }
 
-// Print the tabs
-$currenttab = 'filters';
-include('tabs.php');
+if ($new and confirm_sesskey()) {    //  Edit a new filter
+    $filter = $df->get_filter_from_id();
+    $df->display_filter_form($filter);
 
-if ($new && confirm_sesskey()) {    //  Open a new filter
-    $df->display_filter_form();
-
-} else if ($edit && confirm_sesskey()) {  // Edit existing filter
-    $df->display_filter_form($edit);
+} else if ($edit and confirm_sesskey()) {  // Edit existing filter
+    $filter = $df->get_filter_from_id($edit);
+    $df->display_filter_form($filter);
 
 } else {    
     // Notifications first
     if (!$filters = get_records('dataform_filters', 'dataid', $df->id())) {
         notify(get_string('filtersnoneindataform','dataform'));  // nothing in database
-        notify(get_string('pleaseaddsome','dataform', 'preset.php?id='.$df->cm->id));      // link to presets
     }
 
     echo '<br />',
@@ -169,7 +122,6 @@ if ($new && confirm_sesskey()) {    //  Open a new filter
         $strdescription = get_string('description');
         $strperpage = get_string('filterperpage', 'dataform');
         $strcustomsort = get_string('filtercustomsort', 'dataform');
-        $strsimplesearch = get_string('filtersimplesearch', 'dataform');
         $strcustomsearch = get_string('filtercustomsearch', 'dataform');
         $strvisible = get_string('visible');
         $stredit = get_string('edit');
@@ -182,11 +134,11 @@ if ($new && confirm_sesskey()) {    //  Open a new filter
                                     '}'.
                                 '}" />';
 
-        $table->head = array($strfilters, $strdescription, $strperpage, $strcustomsort, 
-                            $strsimplesearch, $strcustomsearch, $strvisible, $stredit, 
-                            $strdelete, $selectallnone);
-        $table->align = array('left', 'left', 'center', 'left', 'left', 'left', 'center', 'center', 'center', 'center');
-        $table->wrap = array(false, false, false, false, false, false, false, false, false, false);
+        $table->head = array($strfilters, $strdescription, $strperpage, 
+                            $strcustomsort, $strcustomsearch, $strvisible, 
+                            $stredit, $strdelete, $selectallnone);
+        $table->align = array('left', 'left', 'center', 'left', 'left', 'center', 'center', 'center', 'center');
+        $table->wrap = array(false, false, false, false, false, false, false, false, false);
         
         foreach ($filters as $filter) {
             if ($filter->visible) {
@@ -199,52 +151,68 @@ if ($new && confirm_sesskey()) {    //  Open a new filter
                 $class = " class=\"dimmed_text\"";
             }
             
-            $customsort = $customsearch = '';
+            $searchoptions = $filter->search;
             
             // parse custom settings
             if ($filter->customsort or $filter->customsearch) {
+                // parse filter sort settings
+                $sortfields = array();
                 if ($filter->customsort) {
-                    $sortfields = explode(',', $filter->customsort);
-                    foreach ($sortfields as &$sf) {
-                        $sf = explode(' ', $sf);
-                    }
+                    $sortfields = unserialize($filter->customsort);
                 }
                 
                 // parse filter search settings
+                $searchfields = array();
                 if ($filter->customsearch) {
-                    $searchfields = explode(',', $filter->customsearch);
-                    foreach ($searchfields as &$sf) {
-                        $sf = explode('|||', $sf);
-                    }
+                    $searchfields = unserialize($filter->customsearch);
                 }
 
                 // get fields objects
                 $fields = $df->get_fields();
                 
-                if (isset($sortfields) and !empty($sortfields)) {
-                    foreach ($sortfields as $sortfield) {
+                if ($sortfields) {
+                    foreach ($sortfields as $sortieid => $sortdir) {
                         // check if field participates in default sort
-                        foreach ($fields as $field) {
-                            if ($field->field->id and ($field->field->id == $sortfield[0])) {
-                                $customsort .= '<img src="'.$CFG->pixpath.'/t/'. ($sortfield[1] ? 'down' : 'up'). '.gif" class="iconsmall" alt="'. ($sortfield[1] ? 'Descending' : 'Ascending'). '" title="'. ($sortfield[1] ? 'Descending' : 'Ascending'). '" />&nbsp;';
-                                $customsort .= $field->field->name. '<br />';
-                                break;
-                            }
-                        }
+                        $sortoptions .= '<img src="'.$CFG->pixpath.'/t/'. ($sortdir ? 'down' : 'up'). '.gif" class="iconsmall" alt="'. ($sortdir ? 'Descending' : 'Ascending'). '" title="'. ($sortdir ? 'Descending' : 'Ascending'). '" />&nbsp;';
+                        $sortoptions .= $fields[$sortieid]->field->name. '<br />';
                     }
+                } else {
+                    $sortoptions = '---';
                 }
             
-                if (isset($searchfields) and !empty($searchfields)) {
-                    foreach ($searchfields as $searchfield) {
-                        // check if field participates in search
-                        foreach ($fields as $field) {
-                            if ($field->field->id and ($field->field->id == $searchfield[0])) {
-                                $customsearch .= '<b>'. $field->field->name. '</b>';
-                                $customsearch .= ':&nbsp;'. $searchfield[1]. '<br />';
-                                break;
+                if ($searchfields) {
+                    $searcharr = array();
+                    foreach ($searchfields as $fieldid => $searchfield) {
+                        $fieldoptions = array();
+                        if (isset($searchfield['AND']) and $searchfield['AND']) {
+                            //$andoptions = array_map("$fields[$fieldid]->format_search_value", $searchfield['AND']);
+                            $options = array();
+                            foreach ($searchfield['AND'] as $option) {
+                                if ($option) {
+                                    $options[] = $fields[$fieldid]->format_search_value($option);
+                                }
                             }
+                            $fieldoptions[] = 'AND <b>'. $fields[$fieldid]->field->name. '</b>:'. implode(',', $options);
+                        }
+                        if (isset($searchfield['OR']) and $searchfield['OR']) {
+                            //$oroptions = array_map("$fields[$fieldid]->format_search_value", $searchfield['OR']);
+                            $options = array();
+                            foreach ($searchfield['OR'] as $option) {
+                                if ($option) {
+                                    $options[] = $fields[$fieldid]->format_search_value($option);
+                                }
+                            }
+                            $fieldoptions[] = 'OR <b>'. $fields[$fieldid]->field->name. '</b>:'. implode(',', $options);
+                        }
+                        if ($fieldoptions) {
+                            $searcharr[] = implode('<br />', $fieldoptions);
                         }
                     }
+                    if ($searcharr) {
+                        $searchoptions = implode('<br />', $searcharr);
+                    }
+                } else {
+                    $searchoptions = '---';
                 }
             }
 
@@ -255,12 +223,10 @@ if ($new && confirm_sesskey()) {    //  Open a new filter
                 shorten_text($filter->description, 30),
                 // per page
                 $filter->perpage,
-                // custom sort
-                $customsort,
-                // per page
-                $filter->search,
-                // per page
-                $customsearch,
+                // sort options
+                $sortoptions,
+                // search options
+                $searchoptions,
                 // visibility
                 $visible,
                 // edit
@@ -281,6 +247,4 @@ if ($new && confirm_sesskey()) {    //  Open a new filter
 
 // Finish the page
 print_footer($df->course);
-
-
 ?>

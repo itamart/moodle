@@ -1,29 +1,7 @@
 <?php  // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 2005 Martin Dougiamas  http://dougiamas.com             //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
 
 require_once('../../config.php');
-require_once('lib.php');
+require_once('mod_class.php');
 
 
 $d          = optional_param('d', 0, PARAM_INT);             // dataform id
@@ -47,8 +25,6 @@ $cancel     = optional_param('cancel', '');
 // Set a dataform object
 $df = new dataform($d, $id);
 
-require_login($df->course->id, true, $df->cm);
-$df->context = get_context_instance(CONTEXT_MODULE, $df->cm->id);
 require_capability('mod/dataform:managetemplates', $df->context);
 
 // Print the browsing interface
@@ -60,24 +36,17 @@ print_header_simple($df->name(), '', $navigation,
 print_heading(format_string($df->name()));
 
 // DATA PROCESSING
-if ($cancel) {
-    $add = $update = 0;
-}
-
-// check for list actions
 if ($forminput = data_submitted($CFG->wwwroot.'/mod/dataform/fields.php') and confirm_sesskey()) {
     // default sort
     if (!empty($forminput->updatedefaultsort)) {
         $sortlist = array();
 
         // set fields' sort order and direction
-        if ($df->get_fields_records()) {
-            // get fields objects
-            $fields = $df->get_fields();
+        if ($fields = $df->get_fields(array(-1))) {
             foreach ($fields as $field) {
                 $fieldid = $field->field->id;
                 if ($fieldid and $defaultsortorder = optional_param('defaultsort'. $fieldid, 0, PARAM_INT)) {
-                    $sortlist[$defaultsortorder] = $fieldid. ' '. optional_param('defaultdir'. $fieldid, 0, PARAM_INT);
+                    $sortlist[$defaultsortorder] = array($fieldid, optional_param('defaultdir'. $fieldid, 0, PARAM_INT));
                 }
             }
         }
@@ -85,7 +54,7 @@ if ($forminput = data_submitted($CFG->wwwroot.'/mod/dataform/fields.php') and co
         // update dataform default sort
         if (!empty($sortlist)) {
             ksort($sortlist);
-            $strsort = implode(',', $sortlist);
+            $strsort = serialize($sortlist);
         } else {
             $strsort = '';
         }
@@ -124,172 +93,134 @@ if ($duplicate and confirm_sesskey()) {   // Duplicate any requested fields
 
 } else if ($delete and confirm_sesskey()) { // Delete any requested fields
     $df->process_fields('delete', $delete, $confirm);
-
-} else if ($forminput = data_submitted($CFG->wwwroot.'/mod/dataform/filters.php')) {
-    // add a new field
-    if ($add and confirm_sesskey()) {    
-        // Only add this field if its name doesn't already exist
-        if (($forminput->name == '') or $df->name_exists('fields', $forminput->name)) {
-            $displaynoticebad = get_string('invalidfieldname','dataform');
-        } else {
-            $df->process_fields('add', 0, true);    // confirmed by default
-        }
-    // update field
-    } else if ($update and confirm_sesskey()) {   
-        // Only update this field if its name doesn't already exist
-        if (($forminput->name == '') or $df->name_exists('fields', $forminput->name, $update)) {
-            $displaynoticebad = get_string('invalidfieldname','dataform');
-        } else {
-            $df->process_fields('update', $update, true);    // confirmed by default
-        }
-    }
 }
 
 // Print the tabs
 $currenttab = 'fields';
 include('tabs.php');
 
-if ($new && confirm_sesskey()) {    //  Open a new field form
-    $field = $df->get_field($new);
-    $field->display_field_design();
+// Notifications first
+if (!$fields = $df->get_fields()) {
+    notify(get_string('nofieldindataform','dataform'));  // nothing in dataform
+    notify(get_string('pleaseaddsome','dataform', 'presets.php?d='.$df->id())); // link to presets
+}
 
-} else if ($edit && confirm_sesskey()) {  // Edit existing field
-    $field = $df->get_field_from_id($edit);
-    $field->display_field_design();
+// Display the field form jump list
+$directories = get_list_of_plugins('mod/dataform/field/');
+$menufield = array();
 
-} else {                                              /// Display the main listing of all fields
-
-    // Notifications first
-    if (!$fields = $df->get_fields_records()) {
-        notify(get_string('nofieldindataform','dataform'));  // nothing in dataform
-        notify(get_string('pleaseaddsome','dataform', 'preset.php?id='.$df->cm->id)); // link to presets
+foreach ($directories as $directory){
+    if ($directory[0] != '_') {
+        $menufield[$directory] = get_string($directory,'dataform');    //get from language files
     }
+}
+asort($menufield);    //sort in alphabetical order
 
-    // Display the field form jump list
-    $directories = get_list_of_plugins('mod/dataform/field/');
-    $menufield = array();
+echo '<br />';
+echo '<div class="fieldadd">';
+echo '<label for="fieldform_jump">'.get_string('newfield','dataform').'</label>&nbsp;';
+popup_form($CFG->wwwroot.'/mod/dataform/field/field_edit.php?d='.$df->id().'&amp;sesskey='.
+        sesskey().'&amp;type=', $menufield, 'fieldform', '', 'choose');
+helpbutton('fields', get_string('addafield','dataform'), 'dataform');
+echo '</div>';
+echo '<br />';
 
-    foreach ($directories as $directory){
-        if ($directory[0] != '_') {
-            $menufield[$directory] = get_string($directory,'dataform');    //get from language files
+// if there are user fields print admin style list of them
+if ($fields) {
+    
+    echo '<form id="sortdefault" action="'.$CFG->wwwroot.'/mod/dataform/fields.php" method="post">',
+        '<input type="hidden" name="d" value="', $df->id(), '" />',
+        '<input type="hidden" name="sesskey" value="', sesskey(), '" />';
+
+    // multi action buttons
+    echo '<div class="mdl-align">',
+        'With selected: ',
+        '&nbsp;&nbsp;<input type="submit" name="multiduplicate" value="', get_string('multiduplicate', 'dataform'), '" />',
+        '&nbsp;&nbsp;',
+        '<input type="submit" name="multidelete" value="', get_string('multidelete', 'dataform'), '" />',
+        '</div>',
+        '<br />';
+
+    /// table headings
+    $strname = get_string('fieldname','dataform');
+    $strtype = get_string('type', 'dataform');
+    $strdescription = get_string('description');
+    $strorder = get_string('defaultsortorder', 'dataform');
+    $strdir = get_string('defaultsortdir', 'dataform');
+    $stredit = get_string('edit');
+    $strdelete = get_string('delete');
+    $selectallnone = '<input type="checkbox" '.
+                        'onclick="inps=document.getElementsByTagName(\'input\');'.
+                            'for (var i=0;i<inps.length;i++) {'.
+                                'if (inps[i].type==\'checkbox\' && inps[i].name.search(\'fieldselector_\')!=-1){'.
+                                    'inps[i].checked=this.checked;'.
+                                '}'.
+                            '}" />';
+
+    $table->head = array($strname, $strtype, $strdescription, $strorder, $strdir, $stredit, $strdelete, $selectallnone);
+    $table->align = array('left','left','left', 'center', 'center', 'center', 'center', 'center');
+    $table->wrap = array(false, false, false, false, false, false, false, false);
+
+    // parse dataform default sort
+    if ($df->data->defaultsort) {
+        if ($sortfields = unserialize($df->data->defaultsort)) {
+            $sortfieldids = array_keys($sortfields);
         }
     }
-    asort($menufield);    //sort in alphabetical order
-
-    echo '<br />';
-    echo '<div class="fieldadd">';
-    echo '<label for="fieldform_jump">'.get_string('newfield','dataform').'</label>&nbsp;';
-    popup_form($CFG->wwwroot.'/mod/dataform/fields.php?d='.$df->id().'&amp;sesskey='.
-            sesskey().'&amp;new=', $menufield, 'fieldform', '', 'choose');
-    helpbutton('fields', get_string('addafield','dataform'), 'dataform');
-    echo '</div>';
-    echo '<br />';
-
-    // if there are user fields print admin style list of them
-    if ($fields) {
-        // get fields objects
-        $fields = $df->get_fields();
-        
-        echo '<form id="sortdefault" action="'.$CFG->wwwroot.'/mod/dataform/fields.php" method="post">',
-            '<input type="hidden" name="d" value="', $df->id(), '" />',
-            '<input type="hidden" name="sesskey" value="', sesskey(), '" />';
-
-        // multi action buttons
-        echo '<div class="mdl-align">',
-            'With selected: ',
-            '&nbsp;&nbsp;<input type="submit" name="multiduplicate" value="', get_string('multiduplicate', 'dataform'), '" />',
-            '&nbsp;&nbsp;',
-            '<input type="submit" name="multidelete" value="', get_string('multidelete', 'dataform'), '" />',
-            '</div>',
-            '<br />';
-
-        /// table headings
-        $strname = get_string('fieldname','dataform');
-        $strtype = get_string('type', 'dataform');
-        $strdescription = get_string('description');
-        $strorder = get_string('defaultsortorder', 'dataform');
-        $strdir = get_string('defaultsortdir', 'dataform');
-        $stredit = get_string('edit');
-        $strdelete = get_string('delete');
-        $selectallnone = '<input type="checkbox" '.
-                            'onclick="inps=document.getElementsByTagName(\'input\');'.
-                                'for (var i=0;i<inps.length;i++) {'.
-                                    'if (inps[i].type==\'checkbox\' && inps[i].name.search(\'fieldselector_\')!=-1){'.
-                                        'inps[i].checked=this.checked;'.
-                                    '}'.
-                                '}" />';
-
-        $table->head = array($strname, $strtype, $strdescription, $strorder, $strdir, $stredit, $strdelete, $selectallnone);
-        $table->align = array('left','left','left', 'center', 'center', 'center', 'center', 'center');
-        $table->wrap = array(false, false, false, false, false, false, false, false);
-
-        // parse dataform default sort
-        if ($df->data->defaultsort) {
-            $sortfields = explode(',', $df->data->defaultsort);
-            foreach ($sortfields as &$sf) {
-                $sf = explode(' ', $sf);
-            }
-            unset($sf);
-        }
-        
-        $orderoptions = array (1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5);
-        $diroptions = array(0 => get_string('ascending', 'dataform'),
-                            1 => get_string('descending', 'dataform'));
-        
-        foreach ($fields as $field) {
-            if ($fieldid = $field->field->id) {   // exclude the builtin entry field (id = 0)
-                $sortorder = $sortdir = 0;
-                // check if field participates in default sort
-                if (isset($sortfields) and !empty($sortfields)) {
-                    foreach ($sortfields as $index => $sortfield) {
-                        if ($sortfield[0] == $fieldid) {
-                            $sortorder = $index + 1;
-                            $sortdir =  $sortfield[1];
-                            break;
-                        }
-                    }
-                }
-                
-                // set fields table display
-                if ($fieldid > 0) {    // user field
-                    $fieldname = '<a href="fields.php?d='.$df->id(). '&amp;edit='.$fieldid.'&amp;sesskey='.sesskey().'">'. $field->field->name. '</a>';
-                    $fieldedit = '<a href="fields.php?d='.$df->id().'&amp;edit='.$fieldid.'&amp;sesskey='.sesskey().'">'.
-                                '<img src="'.$CFG->pixpath.'/t/edit.gif" class="iconsmall" alt="'.get_string('edit').'" title="'.get_string('edit').'" /></a>';
-                    $fielddelete = '<a href="fields.php?d='.$df->id().'&amp;delete='.$fieldid.'&amp;sesskey='.sesskey().'">'.
-                                '<img src="'.$CFG->pixpath.'/t/delete.gif" class="iconsmall" alt="'.get_string('delete').'" title="'.get_string('delete').'" /></a>';
-                    $fieldselector = '<input type="checkbox" name="fieldselector_'. $fieldid. '" />';
-                } else {                // builtin field
-                    $fieldname = $field->field->name;
-                    $fieldedit = '-';
-                    $fielddelete = '-';
-                    $fieldselector = '-';
-                }
-                $fieldtype = $field->image().'&nbsp;'.get_string($field->type, 'dataform');
-                $fielddescription = shorten_text($field->field->description, 30);
-                $fieldsortoption = choose_from_menu($orderoptions, 'defaultsort'. $fieldid, $sortorder, 'choose' , '', 0 , true);
-                $fielddiroption = choose_from_menu($diroptions, 'defaultdir'. $fieldid, $sortdir, '', '', 0, true);
-
-                
-                $table->data[] = array(
-                    $fieldname,
-                    $fieldtype,
-                    $fielddescription,
-                    $fieldsortoption,
-                    $fielddiroption,
-                    $fieldedit,
-                    $fielddelete,
-                    $fieldselector
-                );
+    
+    $orderoptions = array (1 => 1, 2 => 2, 3 => 3, 4 => 4, 5 => 5);
+    $diroptions = array(0 => get_string('ascending', 'dataform'),
+                        1 => get_string('descending', 'dataform'));
+    
+    foreach ($fields as $fieldid => $field) {
+        $sortorder = $sortdir = 0;
+        // check if field participates in default sort
+        if (isset($sortfieldids)) {
+            $insort = array_search($fieldid, $sortfieldids);
+            if ($insort !== false) {
+                $sortorder = $insort + 1;
+                $sortdir =  $sortfields[$fieldid];
             }
         }
         
-        print_table($table);
-        echo '<br />',
-            '<div class="mdl-align">',
-            '<input type="submit" name="updatedefaultsort" value="', get_string('updatedefaultsort', 'dataform'), '" />',
-            '</div>',
-            '</form>';
+        // set fields table display
+        if ($fieldid > 0) {    // user fields
+            $fieldname = '<a href="field/field_edit.php?d='.$df->id(). '&amp;fid='.$fieldid.'&amp;sesskey='.sesskey().'">'. $field->name(). '</a>';
+            $fieldedit = '<a href="field/field_edit.php?d='.$df->id(). '&amp;fid='.$fieldid.'&amp;sesskey='.sesskey().'">'.
+                        '<img src="'.$CFG->pixpath.'/t/edit.gif" class="iconsmall" alt="'.get_string('edit').'" title="'.get_string('edit').'" /></a>';
+            $fielddelete = '<a href="fields.php?d='.$df->id().'&amp;delete='.$fieldid.'&amp;sesskey='.sesskey().'">'.
+                        '<img src="'.$CFG->pixpath.'/t/delete.gif" class="iconsmall" alt="'.get_string('delete').'" title="'.get_string('delete').'" /></a>';
+            $fieldselector = '<input type="checkbox" name="fieldselector_'. $fieldid. '" />';
+        } else {                // builtin field
+            $fieldname = $field->name();
+            $fieldedit = '-';
+            $fielddelete = '-';
+            $fieldselector = '-';
+        }
+        $fieldtype = $field->image().'&nbsp;'.get_string($field->type(), 'dataform');
+        $fielddescription = shorten_text($field->field->description, 30);
+        $fieldsortoption = choose_from_menu($orderoptions, 'defaultsort'. $fieldid, $sortorder, 'choose' , '', 0 , true);
+        $fielddiroption = choose_from_menu($diroptions, 'defaultdir'. $fieldid, $sortdir, '', '', 0, true);
+
+        
+        $table->data[] = array(
+            $fieldname,
+            $fieldtype,
+            $fielddescription,
+            $fieldsortoption,
+            $fielddiroption,
+            $fieldedit,
+            $fielddelete,
+            $fieldselector
+        );
     }
+    
+    print_table($table);
+    echo '<br />',
+        '<div class="mdl-align">',
+        '<input type="submit" name="updatedefaultsort" value="', get_string('updatedefaultsort', 'dataform'), '" />',
+        '</div>',
+        '</form>';
 }
 
 // Finish the page

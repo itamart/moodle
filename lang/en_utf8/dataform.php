@@ -3,18 +3,23 @@
 $string['_entry'] = 'built-in';
 $string['_time'] = 'built-in';
 $string['_user'] = 'built-in';
+$string['_approve'] = 'built-in';
+$string['_comment'] = 'built-in';
+$string['_rating'] = 'built-in';
+
 $string['action'] = 'Action';
 $string['add'] = 'Add entry';
 $string['addafield'] = 'Add a field';
-$string['addcomment'] = 'Add comment';
 $string['addentries'] = 'Add entries';
 $string['addview'] = 'Add a view';
 $string['advancedsearch'] = 'Advanced search';
 $string['alignedlist'] = 'Aligned list';
+$string['alignment'] = 'Alignment';
 $string['allowcomments'] = 'Allow comments?';
 $string['alttext'] = 'Alternative text';
-$string['approve'] = 'Approve';
-$string['approved'] = 'Approved';
+$string['approve'] = 'approve';
+$string['approved'] = 'approved';
+$string['approvednot'] = 'not approved';
 $string['ascending'] = 'Ascending';
 $string['asearchtemplate'] = 'Advanced search template';
 $string['atmaxentry'] = 'You have entered the maximum number of entries allowed!';
@@ -32,28 +37,47 @@ $string['bynameondate'] = 'by $a->name - $a->date';
 $string['browse'] = 'Browse';
 $string['cancel'] = 'Cancel';
 $string['cannothidedefault'] = 'The default view cannot be hidden.';
+$string['calculated'] = 'Calculated';
+$string['calculatednegation'] = 'Negation';
+$string['calculatedoperand'] = 'Operand';
+$string['calculatedoperator'] = 'Operator';
 $string['checkbox'] = 'Checkbox';
 $string['chooseexportfields'] = 'Choose the fields you wish to export:';
 $string['chooseexportformat'] = 'Choose the format you wish to export to:';
 $string['chooseorupload'] = 'Choose file';
 $string['columns'] = 'columns';
-$string['commentdeleted'] = 'Comment deleted';
-$string['commentempty'] = 'Comment was empty';
+
+// comment
 $string['comment'] = 'Comment';
+$string['commentadd'] = 'Add comment';
+$string['commentdelete'] = 'Are you sure you want to delete this comment?';
+$string['commentdeleted'] = 'Comment deleted';
+$string['commentedit'] = 'Edit comment';
+$string['commentempty'] = 'Comment was empty';
 $string['comments'] = 'Comments';
 $string['commentsaved'] = 'Comment saved';
-$string['commentsn'] = '$a comment(s)';
+$string['commentsn'] = '$a comments';
+$string['commentsnone'] = 'No comments';
+
+// config
 $string['configenablerssfeeds'] = 'This switch will enable the possibility of RSS feeds for all dataforms. You will still need to turn feeds on manually in the settings for each dataform.';
+$string['configmaxentries'] = 'This value determines the maximum number of entries that may be added to a dataform activity.';
+$string['configmaxfields'] = 'This value determines the maximum number of fields that may be added to a dataform activity.';
+$string['configmaxfilters'] = 'This value determines the maximum number of filters that may be added to a dataform activity.';
 $string['configmaxviews'] = 'This value determines the maximum number of views that may be added to a dataform activity.';
+
+// css
 $string['cssinclude'] = 'CSS';
 $string['csssaved'] = 'CSS saved';
+
+// csv
+$string['csvdelimiter'] = 'CSV delimiter';
+$string['csvenclosure'] = 'CSV enclosure';
 $string['csvfailed'] = 'Unable to read the raw data from the CSV file';
-$string['csvfile'] = 'CSV file';
-$string['csvtext'] = 'CSV text';
-$string['csvimport'] = 'CSV file import';
+$string['csvoutput'] = 'CSV output';
+$string['csvsettings'] = 'CSV settings';
 $string['csvwithselecteddelimiter'] = '<acronym title=\"Comma Separated Values\">CSV</acronym> text with selected delimiter:';
-$string['customsort'] = 'Custom sort';
-$string['customsearch'] = 'Custom search';
+
 $string['dataform:approve'] = 'Approve unapproved entries';
 $string['dataform:comment'] = 'Write comments';
 $string['dataform:managecomments'] = 'Manage comments';
@@ -75,71 +99,127 @@ $string['defaultsortdir'] = 'Sort direction';
 $string['defaultview'] = 'Default view';
 $string['delete'] = 'Delete';
 $string['deleteallentries'] = 'Delete all entries';
-$string['deletecomment'] = 'Are you sure you want to delete this comment?';
 $string['deletenotenrolled'] = 'Delete entries by users not enrolled';
 $string['deleted'] = 'deleted';
 $string['deletefield'] = 'Delete an existing field';
 $string['deletewarning'] = 'Are you sure you want to delete this preset?';
 $string['descending'] = 'Descending';
+
+// df
 $string['df:timeinterval'] = 'Interval duration';
 $string['df:intervalcount'] = 'Number of intervals';
 $string['df:lateallow'] = 'Late posts';
 $string['df:lateuse'] = 'Allow late posts';
-$string['df:ratingsallow'] = 'Posts\' rating';
-$string['df:ratingsuse'] = 'Allow rating';
+$string['df:ratingactivity'] = 'Activity rating';
 $string['df:timeavailable'] = 'Available from';
 $string['df:timedue'] = 'Due';
-$string['df:timelimit'] = 'Editing time limit (minutes)';
-$string['directorynotapreset'] = '$a->directory Not a preset: missing files: $a->missing_files';
+
+//
+$string['editordisable'] = 'Disable editor';
+$string['editorenable'] = 'Enable editor';
+
+// entries
+$string['entriesconfirmadd'] = 'You are about to duplicate $a entries. Would you like to proceed?';
+$string['entriesconfirmapprove'] = 'You are about to approve $a entries. Would you like to proceed?';
+$string['entriesconfirmdelete'] = 'You are about to delete $a entries. Would you like to proceed?';
+$string['entriesconfirmupdate'] = 'You are about to update $a entries. Would you like to proceed?';
+$string['entriesapproved'] = '$a entries approved';
+$string['entriesdeleted'] = '$a entries deleted';
+$string['entriesdisapproved'] = '$a entries disapproved';
+$string['entriesfound'] = '$a entries found';
+$string['entriessaved'] = '$a entries saved';
+$string['entriesupdated'] = '$a entries updated';
+$string['entriesnoneindataform'] = 'No entries in dataform';
+$string['entriesnotsaved'] = 'No entry was saved. Please check the format of the uploaded file.';
+$string['entriesadded'] = '$a entries added';
+$string['entriesduplicated'] = '$a entries duplicated';
+$string['entrylocks'] = 'Entry locks';
+$string['entrylockonapproval'] = 'lock when approved';
+$string['entrylockoncomments'] = 'lock when commented';
+$string['entrylockonratings'] = 'lock when rated';
+$string['entrysettingsupdated'] = 'Entry settings updated';
+
+//
 $string['download'] = 'Download';
 $string['edit'] = 'Edit';
-$string['editcomment'] = 'Edit comment';
 $string['editentry'] = 'Edit entry';
 $string['emptyadd'] = 'The Add template is empty, generating a default form...';
 $string['emptyaddform'] = 'You did not fill out any fields!';
 $string['entries'] = 'Entries';
 $string['entrieslefttoadd'] = 'You must add $a more entry/entries in order to complete this activity';
 $string['entrieslefttoaddtoview'] = 'You must add $a more entry/entries before you can view other participants\' entries.';
+$string['entriesmax'] = 'Maximum entries';
+$string['entriesrequired'] = 'Required entries';
+$string['entriesrequiredchanged'] = '<p><strong>IMPORTANT - PLEASE READ </strong></p><p>Due to a bug fix, the behaviour of dataform activities using the \'Required entries\' and \'Required entries before viewing settings\' settings will change. A more detailed explaination of the changes can be read on <a href=\"http://moodle.org/mod/forum/discuss.php?d=110928\" target=\"_blank\">the dataform module forum</a>. The expected behavior of these settings can also be read on <a href=\"http://docs.moodle.org/en/Adding/editing_a_dataform#Required_entries\" target=\"_blank\">Moodle Docs</a>.
+</p><p>This change affects the following dataforms in your system: (Please save this list now, and after the upgrade, check that these activities still work the way that the teacher intends.)</p><strong style=\"color:red\">$a->text</strong><br/>';
+$string['entriestoview'] = 'Entries required before viewing';
 $string['entry'] = 'Entry';
+$string['entryrating'] = 'Rating';
 $string['entrysaved'] = 'Your entry has been saved';
+$string['entrysettings'] = 'Entry settings';
+$string['entrytimelimit'] = 'Editing time limit (minutes)';
+
 $string['errormustbeteacher'] = 'You need to be a teacher to use this page!';
 $string['example'] = 'Dataform module example';
 $string['excel'] = 'Excel';
 $string['expired'] = 'Sorry, this activity closed on {$a} and is no longer available';
+
+// Import/Export
 $string['export'] = 'Export';
-$string['exportaszip'] = 'Export as zip';
-$string['exportdataformrecords'] = 'Export Dataform records';
-$string['exportedtozip'] = 'Exported to temporary zip...';
-$string['failedpresetdelete'] = 'Error deleting a preset!';
-$string['fieldsconfirmdelete'] = 'You are about to delete $a field(s). Would you like to proceed?';
-$string['fieldsconfirmduplicate'] = 'You are about to duplicate $a field(s). Would you like to proceed?';
+$string['import'] = 'Import';
+$string['impexpentries'] = 'Entries filter';
+$string['impexpfields'] = 'Fields filter';
+$string['impexpinput'] = 'Import input';
+$string['impexpoutput'] = 'Export output';
+$string['impexpnoentries'] = 'No entries were found for the requested $a';
+$string['impexptype'] = '$a type';
+$string['impexpuserdatacsv'] = 'User data (CSV)';
+$string['impexpuserdataxls'] = 'User data (Excel)';
+$string['impexpuserdataods'] = 'User data (Calc)';
+$string['impexpuserdataxml'] = 'User data (ZIP)';
+$string['impexpactivitybackup'] = 'User data + preset (ZIP)';
+$string['impexpunsupportedfield'] = '($a field cannot be exported)';
+$string['impexpupdateexisting'] = 'Update existing entries';
+$string['impexpuploadtext'] = 'Text (CSV only)';
+
+// Field
 $string['fieldallowautolink'] = 'Allow autolink';
+$string['fieldattributes'] = 'Field attributes';
 $string['fielddelimiter'] = 'Field delimiter';
 $string['fielddescription'] = 'Field description';
+$string['fieldedit'] = 'Editing \'$a\'';
 $string['fieldenclosure'] = 'Field enclosure';
 $string['fieldheight'] = 'Height';
-$string['fieldheightlistview'] = 'Height in list view';
-$string['fieldheightsingleview'] = 'Height in single view';
 $string['fieldids'] = 'Field ids';
 $string['fieldmappings'] = 'Field Mappings';
+$string['fieldnew'] = 'New $a field';
 $string['fieldname'] = 'Field name';
 $string['fieldnotmatched'] = 'The following fields in your file are not known in this dataform: $a';
 $string['fieldoptions'] = 'Options (one per line)';
+$string['fieldoptionsseparator'] = 'Options separator';
+$string['fieldpicturethumbnail'] = 'Thumbnail dimensions (width x height)';
+$string['fieldpicturelarge'] = 'Large dimensions (width x height)';
 $string['fields'] = 'Fields';
 $string['fieldsadded'] = 'Fields added';
+$string['fieldsconfirmdelete'] = 'You are about to delete $a field(s). Would you like to proceed?';
+$string['fieldsconfirmduplicate'] = 'You are about to duplicate $a field(s). Would you like to proceed?';
 $string['fieldsdeleted'] = 'Fields deleted. You may need to update the default sort settings.';
+$string['fieldsmax'] = 'Maximum fields';
 $string['fieldsupdated'] = 'Fields updated';
 $string['fieldwidth'] = 'Width';
-$string['fieldwidthlistview'] = 'Width in list view';
-$string['fieldwidthsingleview'] = 'Width in single view';
-$string['fieldwidthunits'] = '';
+
+$string['vertical'] = 'Vertical';
+$string['horizontal'] = 'Horizontal';
+
 $string['file'] = 'File';
 $string['filesnotgenerated'] = 'Not all files were generated: $a';
+
+// filter
+$string['filter'] = 'Filter';
 $string['filteradd'] = 'Add a filter';
 $string['filtercurrent'] = 'Current filter';
-$string['fieldsconfirmdelete'] = 'You are about to delete $a filter(s). Would you like to proceed?';
-$string['fieldsconfirmduplicate'] = 'You are about to duplicate $a filter(s). Would you like to proceed?';
-$string['filter'] = 'Filter';
+$string['filtersconfirmdelete'] = 'You are about to delete $a filter(s). Would you like to proceed?';
+$string['filterconfirmduplicate'] = 'You are about to duplicate $a filter(s). Would you like to proceed?';
 $string['filtercancelurl'] = '(<a href=\"$a\">Cancel filter</a>)';
 $string['filterreseturl'] = '(<a href=\"$a\">Reset my filter</a>)';
 $string['filtergroupby'] = 'Group by';
@@ -157,9 +237,12 @@ $string['filtersnoneindataform'] = 'There are no filters defined for this datafo
 $string['filtersadded'] = '$a filter(s) added';
 $string['filtersdeleted'] = '$a filter(s) deleted';
 $string['filtersduplicated'] = '$a filter(s) duplicated';
+$string['filtersmax'] = 'Maximum filters';
 $string['filtersupdated'] = '$a filter(s) updated';
 $string['filterupdate'] = 'Update an existing filter';
 $string['filteruserpref'] = '* My filter';
+
+//
 $string['footer'] = 'Footer';
 $string['forcelinkname'] = 'Forced name for the link';
 $string['fromfile'] = 'Import from zip file';
@@ -171,7 +254,6 @@ $string['headerentries'] = 'Defines browsing interface for multiple entries';
 $string['headerrssview'] = 'Defines appearance of entries in RSS feeds';
 $string['import'] = 'Import';
 $string['importentries'] = 'Import entries';
-$string['importsuccess'] = 'The preset has been successfully applied.';
 $string['insufficiententries'] = 'more entries needed to view this dataform';
 $string['intro'] = 'Introduction';
 $string['invalidfieldname'] = 'Please choose another name for this field';
@@ -191,9 +273,7 @@ $string['listview'] = 'List view';
 $string['longitude'] = 'Longitude';
 $string['manage'] = 'Manage';
 $string['mappingwarning'] = 'All old fields not mapped to a new field will be lost and all data in that field will be removed.';
-$string['maxentries'] = 'Maximum entries';
 $string['maxsize'] = 'Maximum size';
-$string['maxviews'] = 'Maximum views';
 $string['menu'] = 'Menu';
 $string['menuchoose'] = 'Choose...';
 $string['modulename'] = 'Dataform';
@@ -208,6 +288,8 @@ $string['multidelete']      = ' Delete  ';
 $string['multientry'] = 'Repeated entry';
 $string['multimenu'] = 'Menu (Multi-select)';
 $string['multipletags'] = 'Multiple tags found! View not saved';
+
+$string['namecalculated'] = 'Calculated field';
 $string['namecheckbox'] = 'Checkbox field';
 $string['namedate'] = 'Date field';
 $string['namefile'] = 'File field';
@@ -227,8 +309,6 @@ $string['filternew'] = 'Create a new filter';
 $string['newview'] = 'New {$a} view';
 $string['noaccess'] = 'You do not have access to this page';
 $string['nodefaultview'] = 'Default view is not set. Choose one of the views in the list as the default view.';
-$string['nodefinedfields'] = 'New preset has no defined fields!';
-$string['nodefinedviews'] = 'New preset has no defined views!';
 $string['nofieldindataform'] = 'There are no fields defined for this dataform.';
 $string['noviewsindataform'] = 'There are no views defined for this dataform.';
 $string['nomatch'] = 'No matching entries found!';
@@ -250,37 +330,48 @@ $string['pagesize'] = 'Entries per page';
 $string['participants'] = 'Participants';
 $string['picture'] = 'Picture';
 $string['pleaseaddsome'] = 'Please create some below or <a href=\"$a\">choose a predefined set</a> to get started.';
+// preset
+$string['presetaddfromdataform'] = 'Save this dataform preset';
+$string['presetaddfromfile'] = 'Upload a preset from file';
+$string['presetapply'] = 'Apply';
+$string['presetavailableincourse'] = 'Course presets';
+$string['presetavailableinsite'] = 'Site presets';
+$string['presetfaileddelete'] = 'Error deleting a preset!';
+$string['presetimportsuccess'] = 'The preset has been successfully applied.';
 $string['presetinfo'] = 'Saving as a preset will publish this view. Other users may be able to use it in their dataforms.';
+$string['presetmap'] = 'map fields';
+$string['presetnodefinedfields'] = 'New preset has no defined fields!';
+$string['presetnodefinedviews'] = 'New preset has no defined views!';
+$string['presetnoneavailable'] = 'No available presets to display';
+$string['presetrefreshlist'] = 'Refresh list';
 $string['presets'] = 'Presets';
+$string['presetsaveas'] = 'Save as preset';
+$string['presetshare'] = 'Share';
+$string['presetsharesuccess'] = 'Saved successfully. Your preset will now be available across the site.';
+$string['presetusestandard'] = 'Use a preset';
 $string['radiobutton'] = 'Radio buttons';
+
+// rating
 $string['rate'] = 'Rate';
 $string['rating'] = 'Rating';
-$string['ratingeveryone'] = 'Everyone can rate posts';
+$string['ratingmanual'] = 'Manual';
+$string['ratingmethod'] = 'Rating method';
 $string['ratingno'] = 'No ratings';
-$string['ratingonlyteachers'] = 'Only $a can rate posts';
 $string['ratingpublic'] = '$a can see everyone\'s ratings';
 $string['ratingpublicnot'] = '$a can only see their own ratings';
 $string['ratings'] = 'Ratings';
+$string['ratingsaggregate'] = '$a->value ($a->method of $a->count ratings)';
+$string['ratingsmax'] = 'Highest rating';
+$string['ratingsmean'] = 'Average of ratings';
+$string['ratingsmin'] = 'Lowest rating';
+$string['ratingssum'] = 'Sum of ratings';
+$string['ratingsnone'] = 'No ratings';
 $string['ratingssaved'] = 'Ratings saved';
-$string['recordsconfirmadd'] = 'You are about to duplicate $a entries. Would you like to proceed?';
-$string['recordsconfirmapprove'] = 'You are about to approve $a entries. Would you like to proceed?';
-$string['recordsconfirmdelete'] = 'You are about to delete $a entries. Would you like to proceed?';
-$string['recordsconfirmupdate'] = 'You are about to update $a entries. Would you like to proceed?';
-$string['recordsapproved'] = '$a entries approved';
-$string['recordsdeleted'] = '$a entries deleted';
-$string['recordsfound'] = '$a records found';
-$string['recordsnoneindataform'] = 'No entries in dataform';
-$string['recordsnotsaved'] = 'No entry was saved. Please check the format of the uploaded file.';
-$string['recordsadded'] = '$a entries added';
-$string['recordsduplicated'] = '$a entries duplicated';
-$string['recordssaved'] = '$a entries saved';
-$string['recordsupdated'] = '$a entries updated';
+$string['ratingsview'] = 'View ratings';
+$string['ratingsviewrate'] = 'View and rate';
+
 $string['reference'] = 'Reference';
 $string['requireapproval'] = 'Require approval?';
-$string['requiredentries'] = 'Required entries';
-$string['requiredentrieschanged'] = '<p><strong>IMPORTANT - PLEASE READ </strong></p><p>Due to a bug fix, the behaviour of dataform activities using the \'Required entries\' and \'Required entries before viewing settings\' settings will change. A more detailed explaination of the changes can be read on <a href=\"http://moodle.org/mod/forum/discuss.php?d=110928\" target=\"_blank\">the dataform module forum</a>. The expected behavior of these settings can also be read on <a href=\"http://docs.moodle.org/en/Adding/editing_a_dataform#Required_entries\" target=\"_blank\">Moodle Docs</a>.
-</p><p>This change affects the following dataforms in your system: (Please save this list now, and after the upgrade, check that these activities still work the way that the teacher intends.)</p><strong style=\"color:red\">$a->text</strong><br/>';
-$string['requiredentriestoview'] = 'Entries required before viewing';
 $string['resetsettings'] = 'Reset filters';
 $string['resizingimages'] = 'Resizing image thumbnails...';
 $string['returntoimport'] = 'Return to import';
@@ -292,22 +383,21 @@ $string['rsstitletemplate'] = 'RSS title template';
 $string['save'] = 'Save';
 $string['saveandadd'] = 'Save and add another';
 $string['saveandview'] = 'Save and view';
-$string['saveaspreset'] = 'Save as preset';
 $string['filtersave'] = 'Save filter';
 $string['savesettings'] = 'Save settings';
-$string['savesuccess'] = 'Saved successfully. Your preset will now be available across the site.';
 $string['saveview'] = 'Save view';
 $string['search'] = 'Search';
-$string['selectedrequired'] = 'All selected required';
+$string['requiredall'] = 'all required';
+$string['requirednotall'] = 'not all required';
 $string['sendinratings'] = 'Send in my latest ratings';
 $string['showall'] = 'Show all entries';
 $string['teachersandstudents'] = '$a->teachers and $a->students';
+
+// view
 $string['viewcurrent'] = 'Current view';
 $string['viewsconfirmdelete'] = 'You are about to delete $a view(s). Would you like to proceed?';
 $string['viewsconfirmduplicate'] = 'You are about to duplicate $a view(s). Would you like to proceed?';
 $string['view:availabletags'] = 'Available tags';
-$string['view:editordisable'] = 'Disable editor';
-$string['view:editorenable'] = 'Enable editor';
 $string['view:filter'] = 'Filter';
 $string['view:groupby'] = 'Group by';
 $string['view:listbody'] = 'Repeated entry';
@@ -326,27 +416,35 @@ $string['views'] = 'Views';
 $string['viewsadded'] = '$a views added';
 $string['viewsdeleted'] = '$a views deleted';
 $string['viewsupdated'] = '$a views updated';
+$string['viewsmax'] = 'Maximum views';
+$string['viewtypestandard'] = 'Standard';
+$string['viewtypetabular'] = 'Tabular';
+$string['viewtypechart'] = 'Chart';
+$string['viewreturntolist'] = 'Return to list';
+$string['viewforedit'] = 'View for \'edit\'';
+$string['viewformore'] = 'View for \'more\'';
+
+
 $string['richtextarea'] = 'Rich-text area';
-$string['tags:menus'] = 'Menus';
-$string['tags:userpref'] = 'User preferences';
-$string['tags:generalactions'] = 'General actions';
-$string['tags:pagingbar'] = 'Paging bar';
-$string['tags:entryactions'] = 'Entry actions';
-$string['tags:entryinfo'] = 'Entry info';
-$string['tags:authorinfo'] = 'Author info';
+
+// tags
+$string['menus'] = 'Menus';
+$string['userpref'] = 'User preferences';
+$string['generalactions'] = 'General actions';
+$string['pagingbar'] = 'Paging bar';
+$string['actions'] = 'Entry actions';
+$string['entryinfo'] = 'Entry info';
+$string['authorinfo'] = 'Author info';
 $string['text'] = 'Text';
 $string['textarea'] = 'Text area';
 $string['timeadded'] = 'Time added';
 $string['timemodified'] = 'Time modified';
 $string['todataform'] = 'to this dataform.';
 $string['type'] = 'Type';
-$string['undefinedprocessactionmethod'] = 'No action method defined in Data_Preset to handle action \"$a\".';
-$string['unsupportedexport'] = '($a->fieldtype) cannot be exported.';
 $string['updatedefaultsort'] = 'Update sort settings';
 $string['updatefield'] = 'Update an existing field';
 $string['updateview'] = 'Update an existing view';
 $string['url'] = 'Url';
-$string['usestandard'] = 'Use a preset';
 $string['viewfromdate'] = 'Viewable from';
 $string['viewtodate'] = 'Viewable to';
 $string['wrongdataid'] = 'Wrong dataform id provided';

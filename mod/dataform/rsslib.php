@@ -34,11 +34,11 @@
                         }
 
 
-                        // Get the dataform_records out.
+                        // Get the dataform_entries out.
                         $approved = ($data->approval ? ' AND dr.approved = 1 ' : ' ');
 
                         $sql = 'SELECT dr.*, u.firstname, u.lastname ' .
-                                    "FROM {$CFG->prefix}dataform_records dr, {$CFG->prefix}user u " .
+                                    "FROM {$CFG->prefix}dataform_entries dr, {$CFG->prefix}user u " .
                                     "WHERE dr.dataid = {$data->id} " .$approved.
                                     '  AND dr.userid = u.id '.
                                     'ORDER BY dr.timecreated DESC';
@@ -73,11 +73,11 @@
                             if (!empty($data->rsstitletemplate)) {
                                 $item->title = data_print_template('rsstitletemplate', $recordarray, $data, '', 0, true);
                             } else { // else we guess
-                                $item->title   = strip_tags(get_field('dataform_content', 'content',
+                                $item->title   = strip_tags(get_field('dataform_contents', 'content',
                                                                   'fieldid', $firstfield->id, 'recordid', $record->id));
                             }
                             // TODO *******************
-                            $item->description = dataform_print_template('rsstemplate', $recordarray, $data, '', 0, true);
+                            $item->description = dataform_print_template('rss', $recordarray, $data, '', 0, true);
                             $item->pubdate = $record->timecreated;
                             $item->link = $CFG->wwwroot.'/mod/dataform/view.php?d='.$data->id.'&rid='.$record->id;
 

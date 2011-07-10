@@ -31,8 +31,8 @@
                    'd.id AS dataid ' .
                         'FROM '.$CFG->prefix.'dataform d, ' .
                         $CFG->prefix.'dataform_fields df, ' .
-                        $CFG->prefix.'dataform_records dr, ' .
-                        $CFG->prefix.'dataform_content dc ' .
+                        $CFG->prefix.'dataform_entries dr, ' .
+                        $CFG->prefix.'dataform_contents dc ' .
                             "WHERE (d.course = '$courseid' or d.course = '".SITEID."')" .
                             'AND d.id = df.dataid ' .
                             'AND df.id = dc.fieldid ' .

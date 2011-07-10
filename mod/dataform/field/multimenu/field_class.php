@@ -1,40 +1,170 @@
 <?php // $Id$
-///////////////////////////////////////////////////////////////////////////
-//                                                                       //
-// NOTICE OF COPYRIGHT                                                   //
-//                                                                       //
-// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
-//          http://moodle.org                                            //
-//                                                                       //
-// Copyright (C) 1999-onwards Moodle Pty Ltd  http://moodle.com          //
-//                                                                       //
-// This program is free software; you can redistribute it and/or modify  //
-// it under the terms of the GNU General Public License as published by  //
-// the Free Software Foundation; either version 2 of the License, or     //
-// (at your option) any later version.                                   //
-//                                                                       //
-// This program is distributed in the hope that it will be useful,       //
-// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
-// GNU General Public License for more details:                          //
-//                                                                       //
-//          http://www.gnu.org/copyleft/gpl.html                         //
-//                                                                       //
-///////////////////////////////////////////////////////////////////////////
+
+require_once($CFG->dirroot.'/mod/dataform/field/field_class.php');
 
 class dataform_field_multimenu extends dataform_field_base {
 
     public $type = 'multimenu';
+    public $separators = array(
+            array('name' => 'New line', 'chr' => '<br />'),
+            array('name' => 'Space', 'chr' => '&#32;'),
+            array('name' => ',', 'chr' => '&#44;'),
+            array('name' => ', (with space)', 'chr' => '&#44;&#32;')
+    );
 
     function dataform_field_multimenu($field = 0, $df = 0) {
         parent::dataform_field_base($field, $df);
     }
 
 
-    function display_edit($recordid = 0) {
+    /**
+     *
+     */
+    public function display_search($mform, $i = 0, $value = '') {
+        
+        if (is_array($value)){
+            $content     = $value['selected'];
+            $allrequired = $value['allrequired'] ? 'checked = "checked"' : '';
+        } else {
+            $content     = array();
+            $allrequired = '';
+        }
+
+        $optionsarr = explode("\n",$this->field->param1);
+        $menuoptions = array();
+        foreach ($optionsarr as $option) {
+            $menuoptions[$option] = $option;
+        }
+        
+        $select = &$mform->addElement('select', 'f_'. $i. '_'. $this->field->id, null, $menuoptions);
+        $select->setMultiple(true);
+
+        foreach ($menuoptions as $option) {
+            $option = trim($option);
+            $slashedoption = addslashes($option);
+            
+            if (in_array($slashedoption, $content)) { // Selected by user.
+                $select->setSelected($slashedoption);
+            }
+        }
+
+        $mform->addElement('checkbox', 'f_'. $i. '_'. $this->field->id.'_allreq', null, ucfirst(get_string('requiredall', 'dataform')));
+        $mform->setDefault('f_'. $i. '_'. $this->field->id.'_allreq', $allrequired);
+    }
+
+    /**
+     *
+     */
+    function parse_search($formdata, $i) {
+        $selected = optional_param('f_'. $i. '_'. $this->field->id, array(), PARAM_NOTAGS);
+        if ($selected) {
+            $allrequired = optional_param('f_'. $i. '_'. $this->field->id.'_allreq', 0, PARAM_BOOL);
+            return array('selected'=>$selected, 'allrequired'=>$allrequired);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     *
+     */
+    public function format_search_value($searchparams) {
+        list($not, $operator, $value) = $searchparams;
+        if (is_array($value)){
+            $selected = implode(', ', $value['selected']);
+            $allrequired = '('. ($value['allrequired'] ? get_string('requiredall') : get_string('requirednotall')). ')';
+            return $not. ' '. $operator. ' '. $selected. ' '. $allrequired;
+        } else {
+            return false;
+        }
+    }  
+
+    /**
+     *
+     */
+    public function get_search_sql($search) {
+        list($not, , $value) = $search;
+
+        $allrequired = $value['allrequired'];
+        $selected    = $value['selected'];
+        $varcharcontent = sql_compare_text("c{$this->field->id}.content", 255);
+
+        if ($selected) {
+            $conditions = array();
+            foreach ($selected as $sel) {
+                $likesel = str_replace('%', '\%', $sel);
+                $likeselsel = str_replace('_', '\_', $likesel);
+                $conditions[] = "(c{$this->field->id}.fieldid = {$this->field->id} AND ($varcharcontent = '$sel'
+                                                                               OR c{$this->field->id}.content LIKE '$likesel##%'
+                                                                               OR c{$this->field->id}.content LIKE '%##$likesel'
+                                                                               OR c{$this->field->id}.content LIKE '%##$likesel##%'))";
+            }
+            if ($allrequired) {
+                return " $not (".implode(" AND ", $conditions).") ";
+            } else {
+                return " $not (".implode(" OR ", $conditions).") ";
+            }
+        } else {
+            return " ";
+        }
+    }
+
+    /**
+     *
+     */
+    public function update_content($recordid, $value='', $name='') {
+        $content = new object;
+        $content->fieldid  = $this->field->id;
+        $content->recordid = $recordid;
+        $content->content  = $this->format_content($value);
+
+        if ($oldcontent = get_record('dataform_contents','fieldid', $this->field->id, 'recordid', $recordid)) {
+            $content->id = $oldcontent->id;
+            return update_record('dataform_contents', $content);
+        } else {
+            return insert_record('dataform_contents', $content);
+        }
+    }
+
+    /**
+     *
+     */
+    protected function format_content($content) {
+        // content from form
+        if (is_array($content)) {
+            $options = explode("\n", $this->field->param1);
+            $options = array_map('trim', $options);
+
+            $vals = array();
+            foreach ($content as $key=>$val) {
+                if ($key === 'xxx') {
+                    continue;
+                }
+                if (!in_array(stripslashes($val), $options)) {
+                    continue;
+                }
+                $vals[] = $val;
+            }
+
+            if (empty($vals)) {
+                return NULL;
+            } else {
+                return implode('##', $vals);
+            }
+        
+        // content from import
+        } else {
+            return $content;
+        }
+    }
+
+    /**
+     *
+     */
+    protected function display_edit($recordid = 0) {
 
         if ($recordid){
-            $content = get_field('dataform_content', 'content', 'fieldid', $this->field->id, 'recordid', $recordid);
+            $content = get_field('dataform_contents', 'content', 'fieldid', $this->field->id, 'recordid', $recordid);
             $content = explode('##', $content);
         } else {
             $content = array();
@@ -62,149 +192,12 @@ class dataform_field_multimenu extends dataform_field_base {
         return $str;
     }
 
-    function display_search($value = '') {
-        global $CFG;
+    /**
+     *
+     */
+    protected function display_browse($recordid) {
 
-        if (is_array($value)){
-            $content     = $value['selected'];
-            $allrequired = $value['allrequired'] ? 'checked = "checked"' : '';
-        } else {
-            $content     = array();
-            $allrequired = '';
-        }
-
-        static $c = 0;
-
-        $str = '<select name="f_'.$this->field->id.'[]" multiple="multiple">';
-
-        // display only used options
-        $varcharcontent = sql_compare_text('content', 255);
-        $sql = "SELECT DISTINCT $varcharcontent AS content
-                  FROM {$CFG->prefix}dataform_content
-                 WHERE fieldid={$this->field->id} AND content IS NOT NULL";
-
-        $usedoptions = array();
-        if ($used = get_records_sql($sql)) {
-            foreach ($used as $data) {
-                $valuestr = $data->content;
-                if ($valuestr === '') {
-                    continue;
-                }
-                $values = explode('##', $valuestr);
-                foreach ($values as $value) {
-                    $usedoptions[$value] = $value;
-                }
-            }
-        }
-
-        $found = false;
-        foreach (explode("\n",$this->field->param1) as $option) {
-            $option = trim($option);
-            if (!isset($usedoptions[$option])) {
-                continue;
-            }
-            $found = true;
-            $str .= '<option value="' . s($option) . '"';
-
-            if (in_array(addslashes($option), $content)) {
-                // Selected by user.
-                $str .= ' selected = "selected"';
-            }
-            $str .= '>' . $option . '</option>';
-        }
-        if (!$found) {
-            // oh, nothing to search for
-            return '';
-        }
-
-        $str .= '</select>';
-
-        $str .= '&nbsp;<input name="f_'.$this->field->id.'_allreq" id="f_'.$this->field->id.'_allreq'.$c.'" type="checkbox" '.$allrequired.'/>';
-        $str .= '<label for="f_'.$this->field->id.'_allreq'.$c.'">'.get_string('selectedrequired', 'dataform').'</label>';
-        $c++;
-
-        return $str;
-
-    }
-
-    function parse_search() {
-        $selected    = optional_param('f_'.$this->field->id, array(), PARAM_NOTAGS);
-        $allrequired = optional_param('f_'.$this->field->id.'_allreq', 0, PARAM_BOOL);
-        if (empty($selected)) {
-            // no searching
-            return '';
-        }
-        return array('selected'=>$selected, 'allrequired'=>$allrequired);
-    }
-
-    function get_search_sql($value) {
-        $allrequired = $value['allrequired'];
-        $selected    = $value['selected'];
-        $varcharcontent = sql_compare_text("c{$this->field->id}.content", 255);
-
-        if ($selected) {
-            $conditions = array();
-            foreach ($selected as $sel) {
-                $likesel = str_replace('%', '\%', $sel);
-                $likeselsel = str_replace('_', '\_', $likesel);
-                $conditions[] = "(c{$this->field->id}.fieldid = {$this->field->id} AND ($varcharcontent = '$sel'
-                                                                               OR c{$this->field->id}.content LIKE '$likesel##%'
-                                                                               OR c{$this->field->id}.content LIKE '%##$likesel'
-                                                                               OR c{$this->field->id}.content LIKE '%##$likesel##%'))";
-            }
-            if ($allrequired) {
-                return " (".implode(" AND ", $conditions).") ";
-            } else {
-                return " (".implode(" OR ", $conditions).") ";
-            }
-        } else {
-            return " ";
-        }
-    }
-
-    function update_content($recordid, $value, $name='') {
-        $content = new object;
-        $content->fieldid  = $this->field->id;
-        $content->recordid = $recordid;
-        $content->content  = $this->format_dataform_field_multimenu_content($value);
-
-        if ($oldcontent = get_record('dataform_content','fieldid', $this->field->id, 'recordid', $recordid)) {
-            $content->id = $oldcontent->id;
-            return update_record('dataform_content', $content);
-        } else {
-            return insert_record('dataform_content', $content);
-        }
-    }
-
-    function format_dataform_field_multimenu_content($content) {
-        if (!is_array($content)) {
-            return NULL;
-        }
-        $options = explode("\n", $this->field->param1);
-        $options = array_map('trim', $options);
-
-        $vals = array();
-        foreach ($content as $key=>$val) {
-            if ($key === 'xxx') {
-                continue;
-            }
-            if (!in_array(stripslashes($val), $options)) {
-                continue;
-            }
-            $vals[] = $val;
-        }
-
-        if (empty($vals)) {
-            return NULL;
-        }
-
-        return implode('##', $vals);
-    }
-
-
-    function display_browse($recordid) {
-
-        if ($content = get_record('dataform_content', 'fieldid', $this->field->id, 'recordid', $recordid)) {
+        if ($content = get_record('dataform_contents', 'fieldid', $this->field->id, 'recordid', $recordid)) {
             if (empty($content->content)) {
                 return false;
             }
@@ -213,15 +206,15 @@ class dataform_field_multimenu extends dataform_field_base {
             $options = array_map('trim', $options);
 
             $contentArr = explode('##', $content->content);
-            $str = '';
+            $str = array();
             foreach ($contentArr as $line) {
                 if (!in_array($line, $options)) {
                     // hmm, looks like somebody edited the field definition
                     continue;
                 }
-                $str .= $line . "<br />\n";
+                $str[] = $line;
             }
-            return $str;
+            return implode($this->separators[$this->field->param2]['chr'], $str);
         }
         return false;
     }
