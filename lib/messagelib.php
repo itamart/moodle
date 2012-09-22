@@ -384,17 +384,25 @@ function message_get_my_providers() {
  * @param int $userid id of user
  * @return array An array of message providers
  */
-function message_get_providers_for_user($userid) {
+function message_get_providers_for_user($userid, $contextid = null) {
     global $DB, $CFG;
 
-    $systemcontext = get_context_instance(CONTEXT_SYSTEM);
+    if (!empty($contextid)) {
+        $context = get_context_instance_by_id($contextid);
+    } else {
+        $context = get_context_instance(CONTEXT_SYSTEM);
+    }
 
     $providers = get_message_providers();
 
     // Remove all the providers we aren't allowed to see now
     foreach ($providers as $providerid => $provider) {
         if (!empty($provider->capability)) {
-            if (!has_capability($provider->capability, $systemcontext, $userid)) {
+            $capinfo = get_capability_info($provider->capability);
+            $capincontext = ($capinfo->contextlevel == $context->contextlevel);
+            $contextsystem = ($context->contextlevel == CONTEXT_SYSTEM);
+            if ((!$contextsystem and !$capincontext)
+                    or !has_capability($provider->capability, $context, $userid)) {
                 unset($providers[$providerid]);   // Not allowed to see this
                 continue;
             }

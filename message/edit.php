@@ -27,6 +27,7 @@ require_once($CFG->dirroot . '/message/lib.php');
 
 $userid = optional_param('id', $USER->id, PARAM_INT);    // user id
 $course = optional_param('course', SITEID, PARAM_INT);   // course id (defaults to Site)
+$context = optional_param('context', 0, PARAM_INT);   // context id
 $disableall = optional_param('disableall', 0, PARAM_BOOL); //disable all of this user's notifications
 
 $url = new moodle_url('/message/edit.php');
@@ -90,7 +91,7 @@ if ($user->id == $USER->id) {
 }
 
 // Fetch message providers
-$providers = message_get_providers_for_user($user->id);
+$providers = message_get_providers_for_user($user->id, $context);
 
 /// Save new preferences if data was submitted
 
