@@ -164,7 +164,7 @@ function message_send($eventdata) {
             // User has not disabled notifications
             // See if user set any notification preferences, otherwise use site default ones
             $userpreferencename = 'message_provider_'.$preferencebase.'_'.$userstate. $context;
-print_object($userpreferencename);
+
             if ($userpreference = get_user_preferences($userpreferencename, null, $eventdata->userto->id)) {
                 if (in_array($processor->name, explode(',', $userpreference))) {
                     $processorlist[] = $processor->name;
