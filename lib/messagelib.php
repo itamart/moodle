@@ -114,6 +114,12 @@ function message_send($eventdata) {
 
     $savemessage->timecreated = time();
 
+    if (!empty($eventdata->context)) {
+        $context = "_context$eventdata->context";
+    } else {
+        $context = '';
+    }
+
     // Fetch enabled processors
     $processors = get_message_processors(true);
     // Fetch default (site) preferences
@@ -157,7 +163,8 @@ function message_send($eventdata) {
         } else if ($permitted == 'permitted' && $userisconfigured && !$eventdata->userto->emailstop) {
             // User has not disabled notifications
             // See if user set any notification preferences, otherwise use site default ones
-            $userpreferencename = 'message_provider_'.$preferencebase.'_'.$userstate;
+            $userpreferencename = 'message_provider_'.$preferencebase.'_'.$userstate. $context;
+print_object($userpreferencename);
             if ($userpreference = get_user_preferences($userpreferencename, null, $eventdata->userto->id)) {
                 if (in_array($processor->name, explode(',', $userpreference))) {
                     $processorlist[] = $processor->name;

@@ -33,6 +33,12 @@ $disableall = optional_param('disableall', 0, PARAM_BOOL); //disable all of this
 $url = new moodle_url('/message/edit.php');
 $url->param('id', $userid);
 $url->param('course', $course);
+if ($context) {
+    $url->param('context', $context);
+    $messageprovidercontext = "_context$context";
+} else {
+    $messageprovidercontext = '';
+}
 
 $PAGE->set_url($url);
 
@@ -125,7 +131,7 @@ if (($form = data_submitted()) && confirm_sesskey()) {
                 if (empty($linepref)) {
                     $linepref = 'none';
                 }
-                $preferences['message_provider_'.$provider->component.'_'.$provider->name.'_'.$state] = $linepref;
+                $preferences['message_provider_'.$provider->component.'_'.$provider->name.'_'.$state. $messageprovidercontext] = $linepref;
             }
         }
     }
@@ -137,15 +143,15 @@ if (($form = data_submitted()) && confirm_sesskey()) {
     }
 
     //process general messaging preferences
-    $preferences['message_blocknoncontacts'] = !empty($form->blocknoncontacts)?1:0;
+    $preferences['message_blocknoncontacts'. $messageprovidercontext] = !empty($form->blocknoncontacts)?1:0;
     //$preferences['message_beepnewmessage']    = !empty($form->beepnewmessage)?1:0;
-
+    
     // Save all the new preferences to the database
     if (!set_user_preferences($preferences, $user->id)) {
         print_error('cannotupdateusermsgpref');
     }
 
-    redirect("$CFG->wwwroot/message/edit.php?id=$user->id&course=$course->id");
+    redirect($url);
 }
 
 /// Load preferences
@@ -155,7 +161,8 @@ $preferences->userdefaultemail = $user->email;//may be displayed by the email pr
 /// Get providers preferences
 foreach ($providers as $provider) {
     foreach (array('loggedin', 'loggedoff') as $state) {
-        $linepref = get_user_preferences('message_provider_'.$provider->component.'_'.$provider->name.'_'.$state, '', $user->id);
+        $linepref = get_user_preferences('message_provider_'.$provider->component.'_'.$provider->name.'_'.$state. $messageprovidercontext, '', $user->id);
+
         if ($linepref == ''){
             continue;
         }
@@ -175,7 +182,7 @@ foreach ($processors as $processor) {
 }
 
 //load general messaging preferences
-$preferences->blocknoncontacts  =  get_user_preferences( 'message_blocknoncontacts', '', $user->id);
+$preferences->blocknoncontacts  =  get_user_preferences( 'message_blocknoncontacts'. $messageprovidercontext, '', $user->id);
 //$preferences->beepnewmessage    =  get_user_preferences( 'message_beepnewmessage', '', $user->id);
 
 /// Display page header
