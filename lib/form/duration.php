@@ -81,6 +81,25 @@ class MoodleQuickForm_duration extends MoodleQuickForm_group {
             }
             $this->_options['defaultunit'] = $options['defaultunit'];
         }
+        if (isset($options['units'])) {
+            $availableunits = $this->get_units();
+            $requestedunits = $options['units'];
+            $displayunits = array();
+            // Make sure requested units are in an array.
+            if (!is_array($requestedunits)) {
+                $requestedunits = array($requestedunits);
+            }
+            // Validate and register requested units.
+            foreach ($requestedunits as $unit) {
+                if (!array_key_exists($unit, $availableunits)) {
+                    throw new coding_exception($unit .
+                            ' is not a recognised unit in MoodleQuickForm_duration.');
+                }
+                $displayunits[$unit] = $availableunits[$unit];
+            }
+            krsort($displayunits, SORT_NUMERIC);
+            $this->_options['units'] = $displayunits;
+        }
     }
 
     /**
@@ -135,7 +154,9 @@ class MoodleQuickForm_duration extends MoodleQuickForm_group {
         // E_STRICT creating elements without forms is nasty because it internally uses $this
         $this->_elements[] = @MoodleQuickForm::createElement('text', 'number', get_string('time', 'form'), $attributes, true);
         unset($attributes['size']);
-        $this->_elements[] = @MoodleQuickForm::createElement('select', 'timeunit', get_string('timeunit', 'form'), $this->get_units(), $attributes, true);
+        // Standard or requested units.
+        $units = !empty($this->_options['units']) ? $this->_options['units'] : $this->get_units();
+        $this->_elements[] = @MoodleQuickForm::createElement('select', 'timeunit', get_string('timeunit', 'form'), $units, $attributes, true);
         // If optional we add a checkbox which the user can use to turn if on
         if($this->_options['optional']) {
             $this->_elements[] = @MoodleQuickForm::createElement('checkbox', 'enabled', null, get_string('enable'), $this->getAttributes(), true);
