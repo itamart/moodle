@@ -931,6 +931,35 @@ function user_get_user_navigation_info($user, $page, $options = array()) {
         $returnobject->navitems[] = $item;
     }
 
+    // Editing link.
+    if ($buildlogout and $page->user_allowed_editing()) {
+        // Set user editing mode.
+        $pageurl = $page->url;
+        $changeediting = optional_param('edit', -1, PARAM_BOOL);
+        if ($changeediting != -1) {
+            $user->editing = $changeediting;
+            $pageurl->remove_params('edit');
+            redirect($pageurl);
+        }
+
+        $editing = new stdClass();
+        $editing->itemtype = 'link';
+        if ($page->user_is_editing()) {
+            $title = get_string('turneditingoff');
+            $pix = "i/edit";
+            $url = new moodle_url($pageurl, array('edit' => '0', 'sesskey' => sesskey()));
+        } else {
+            $title = get_string('turneditingon');
+            $pix = "i/edit";
+            $url = new moodle_url($pageurl, array('edit' => '1', 'sesskey' => sesskey()));
+        }
+        $editing->url = $url;
+        $editing->pix = $pix;
+        $editing->title = $title;
+        $editing->titleidentifier = 'editing,moodle';
+        $returnobject->navitems[] = $editing;
+    }
+
     // Add the last item to the list.
     if (!is_null($lastobj)) {
         $returnobject->navitems[] = $lastobj;
